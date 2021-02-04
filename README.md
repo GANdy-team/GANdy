@@ -23,7 +23,7 @@ This repository estimates uncertainty using GANs and other machine learning mode
 
 5. Saving and loading models: @pickle and h5
 	- *User* - Provide a format, and file descriptor
-	- *Function* - Aave/store existing model instances for future use
+	- *Function* - Save/store existing model instances for future use
 	- *Results* - Pickled object
 
 6. Optimize model architecture:
