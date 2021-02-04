@@ -28,7 +28,7 @@ This repository estimates uncertainty using GANs and other machine learning mode
 
 6. Optimize model architecture:
 	- *User* - Provide the base model, data to fit to, desired targets, optimization scheme option
-	- *Function - Run optimization scheme for chosen base model on provided data
+	- *Function* - Run optimization scheme for chosen base model on provided data
 	- *Results* - Model with hyperparameters optimized to minimize loss **and a distribution metric (How will we do this?? Needs exploration)**
 
 7. Identification of costly predictions:
