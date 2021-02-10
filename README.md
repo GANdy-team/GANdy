@@ -1,6 +1,11 @@
 # GANdy
 This repository estimates uncertainty using GANs and other machine learning models such as  GPs and BNNs.
 
+## Installation
+
+In console, execute the following command where <code>package_path</code> is the path to the folder containing this Readme (GANdy):
+> <code>pip install package_path</code>
+It can then be imported on the installed environment as <code>gandy</code>.
 
 ### Use cases
 1. Creating uncertainty prediction models
