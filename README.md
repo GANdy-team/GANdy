@@ -7,8 +7,8 @@ In console, execute the following command where <code>package_path</code> is the
 It can then be imported on the installed environment as <code>gandy</code>.
 
 ## For developers
-To install the development environment <code>conda env create -f devenv.yml</code>.
-If any new installed development dependancies, add them to the dev environment by <code>conda env export > devenv.yml</code>.
-To update dev environment, <code>conda env update --file devenv.yml</code>
+To install the development environment <code>pip install -r requirements.txt</code>.
+If any new installed development dependancies, add them to the dev environment by <code>pip freeze > requirements.txt</code>.
+To update dev environment, same as install.
 
 ./working/ is a workspace for notebooks/testing. It will be ignored by git by default, and will be removed upon release. To specifically "save" your files to git or to share work with other developers, use <code>git add --force working</code>.
