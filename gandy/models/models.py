@@ -175,6 +175,10 @@ class UncertaintyModel:
             uncertainties - array of prediction uncertainties of targets with 
                 the same length as Xs
                 type == ndarray
+                
+            (?) flags - array of flags of uncertain predictions higher than thr-
+                eshhold of same length as Xs
+                type == ndarray
         '''
         ## pseudocode
         #. check X data with check function
@@ -208,7 +212,7 @@ class UncertaintyModel:
         ## psuedocode
         #. raise not implimented
         
-        return redictions, uncertainties
+        return predictions, uncertainties
     
     def save(self, filename, format = 'h5', **kwargs):
         '''
