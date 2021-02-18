@@ -127,7 +127,9 @@ class UncertaintyModel:
         
         #. check data inputs with check method
         
-        #. execute _train with formated data
+        #. get metric method
+        
+        #. execute _train with formated data and metric (?)
         
         #. update session losses with session _train losses
         
@@ -136,7 +138,7 @@ class UncertaintyModel:
     def _train(self, Xs, Ys, **kwargs):
         '''
         Must be implimented in child class. Trains the predictor at self.model
-        and returns any losses or desired metrics.
+        and returns any losses or desired metrics. Up to child to accept metric.
         
         Arguments:
             Xs/Ys - training examples/targets
@@ -214,6 +216,37 @@ class UncertaintyModel:
         
         return predictions, uncertainties
     
+    def score(self, Xs, metric, **kwargs):
+        '''
+        Make predictions and score the results according to a defined metric.
+        
+        Arguments:
+            Xs - example data to make predictions on
+                type == ndarray
+                
+            metric - metric to use, a key in UncertaintyModel.metrics or a 
+                metric object
+                type == str or gandy.metrics.metric
+                
+            **kwargs - keyword arguments to pass to <predict>
+            
+        Returns:
+            cost - total cost calculated by metric
+                type == float
+                
+            costs - array of costs for X examples
+                type == ndarray
+        '''
+        ## pseudocode
+        #. if statement to get metric object from metrics or specified
+        #. else raise undefined metric
+        
+        #. predictions, uncertainties = execute self.predict on Xs
+        
+        #. pass predictions, uncertainties to metric get back costs
+        
+        return cost, costs
+        
     def save(self, filename, format = 'h5', **kwargs):
         '''
         Save the model out of memory to the hard drive by specified format.
