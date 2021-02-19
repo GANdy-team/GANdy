@@ -43,6 +43,7 @@ class gans(gandy.models.models.UncertaintyModel, deepchem.models.GAN):
         # adapted from deepchem tutorial 14:
         # do something like:
         # hyperparameters = **kwargs
+        # output_layer_dimension = self.xshape[0]
         # noise_in = Input(shape=get_noise_input_shape())
         # gen_dense_lay_1 = Dense(layer_one_dimension, activation=tf.nn.relu)(noise_in)
         # gen_outputs = Dense(output_layer_dimension, activation=tf.nn.relu)(gen_dense_lay_1)
@@ -172,6 +173,7 @@ class cgans(gans):
         # adapted from deepchem tutorial 14:
         # do something like:
         # hyperparameters = **kwargs
+        # output_layer_dimension = self.xshape[0]
         # noise_in = Input(shape=get_noise_input_shape())
         # conditional_in = Input(shape=(self.n_classes,))
         # gen_input = Concatenate()([noise_in, conditional_in])
