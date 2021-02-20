@@ -32,7 +32,7 @@ class gans(gandy.models.models.UncertaintyModel, deepchem.models.GAN):
         # self.create_generator(**kwargs)
         # self.create_discriminator(**kwargs)
         # self.n_classes = yshape ? this might be inheritted
-        super(gans, self).__init__(xshape, yshape, **kwargs)
+        super(gans, self).__init__(xshape=xshape, yshape=yshape, **kwargs)
 
     def create_generator(self, **kwargs):
         '''
