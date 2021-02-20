@@ -8,7 +8,7 @@ Deepchem's tutorial on GANs (14_Conditional_Generative_Adversarial_Networks) can
 https://github.com/deepchem/deepchem/blob/master/examples/tutorials/14_Conditional_Generative_Adversarial_Networks.ipynb
 '''
 
-class gans(deepchem.models.GAN, gandy.models.models.UncertaintyModel):
+class gan(deepchem.models.GAN, gandy.models.models.UncertaintyModel):
     '''
     Implements Generative Adversarial Networks.
     A Generative Adversarial Network (GAN) is a type of generative model.  It
@@ -29,7 +29,7 @@ class gans(deepchem.models.GAN, gandy.models.models.UncertaintyModel):
         Initializes instance of a GAN
         '''
         # the MRO order of init calls is deepchem.models.GAN first, then gandy.models.models.UncertaintyModel
-        super(gans, self).__init__(xshape=xshape, yshape=yshape, **kwargs)
+        super(gan, self).__init__(xshape=xshape, yshape=yshape, **kwargs)
 
     def create_generator(self, **kwargs):
         '''
@@ -126,21 +126,13 @@ class gans(deepchem.models.GAN, gandy.models.models.UncertaintyModel):
 
 
 
-class cgans(gans):
+class cgan(gan):
     '''
     This class is a subclass of the gans class and instead implements a cgan.
     A Conditional GAN (cGAN) has additional inputs to the generator and discriminator,
     and learns a distribution that is conditional on the values of those inputs. They
     are referred to as "conditional inputs".
     '''
-    
-    def __init__(self, xshape, yshape, **kwargs):
-        '''
-        Initializes instance of a cGAN
-        '''
-        # set special conditional properties here
-        super(cgans, self).__init__(xshape, yshape,, **kwargs)
-        return # nothing? do we need return statements in the init?
 
     def get_conditional_input_shapes(self, **kwargs):
         '''
