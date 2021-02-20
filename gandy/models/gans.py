@@ -29,8 +29,7 @@ class gans(gandy.models.models.UncertaintyModel, deepchem.models.GAN):
         Initializes instance of a GAN
         '''
         # do something like:
-        # self.create_generator(**kwargs)
-        # self.create_discriminator(**kwargs)
+        # _build(**kwargs)
         # self.n_classes = yshape ? this might be inheritted
         super(gans, self).__init__(xshape=xshape, yshape=yshape, **kwargs)
 
@@ -91,6 +90,8 @@ class gans(gandy.models.models.UncertaintyModel, deepchem.models.GAN):
         Construct the model
         '''
         # do something like:
+        # self.create_generator(**kwargs)
+        # self.create_discriminator(**kwargs)
         # 
         return
 
@@ -137,7 +138,7 @@ class gans(gandy.models.models.UncertaintyModel, deepchem.models.GAN):
 
 
 class cgans(gans):
-	'''
+    '''
     This class is a subclass of the gans class and instead implements a cgan.
     A Conditional GAN (cGAN) has additional inputs to the generator and discriminator,
     and learns a distribution that is conditional on the values of those inputs. They
