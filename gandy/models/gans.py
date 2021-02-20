@@ -34,7 +34,6 @@ class gans(gandy.models.models.UncertaintyModel, deepchem.models.GAN):
         # self.n_classes = yshape ? this might be inheritted
         super(gans, self).__init__(xshape, yshape, **kwargs)
 
-    @classmethod
     def create_generator(self, **kwargs):
         '''
         Creates the generator (as a keras model)
@@ -51,7 +50,6 @@ class gans(gandy.models.models.UncertaintyModel, deepchem.models.GAN):
         # self.generator = tf.keras.Model(inputs=[noise_in], outputs=[gen_outputs])
         return self.generator
 
-    @classmethod
     def create_discriminator(self, **kwargs):
         '''
         Creates the discriminator (as a keras model)
@@ -164,7 +162,6 @@ class cgans(gans):
         # noise_in = Input(shape=get_noise_input_shape())
         # conditional_in = Input(shape=(self.n_classes,))
 
-    @classmethod
     def create_generator(self, **kwargs):
         '''
         Creates the generator (as a keras model)
@@ -182,7 +179,6 @@ class cgans(gans):
         # self.generator = tf.keras.Model(inputs=[noise_in, conditional_in], outputs=[gen_outputs])
         return self.generator
 
-    @classmethod
     def create_discriminator(self, **kwargs):
         '''
         Creates the discriminator (as a keras model)
