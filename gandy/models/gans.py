@@ -8,7 +8,7 @@ Deepchem's tutorial on GANs (14_Conditional_Generative_Adversarial_Networks) can
 https://github.com/deepchem/deepchem/blob/master/examples/tutorials/14_Conditional_Generative_Adversarial_Networks.ipynb
 '''
 
-class gans(gandy.models.models.UncertaintyModel, deepchem.models.GAN):
+class gans(deepchem.models.GAN, gandy.models.models.UncertaintyModel):
     '''
     Implements Generative Adversarial Networks.
     A Generative Adversarial Network (GAN) is a type of generative model.  It
@@ -23,14 +23,12 @@ class gans(gandy.models.models.UncertaintyModel, deepchem.models.GAN):
     https://github.com/deepchem/deepchem/blob/master/deepchem/models/gan.py#L14-L442
     for the information about GANS. This class builds off of the deepchem GAN class.
     '''
-    
+
     def __init__(self, xshape, yshape, **kwargs):
         '''
         Initializes instance of a GAN
         '''
-        # do something like:
-        # _build(**kwargs)
-        # self.n_classes = yshape ? this might be inheritted
+        # the MRO order of init calls is deepchem.models.GAN first, then gandy.models.models.UncertaintyModel
         super(gans, self).__init__(xshape=xshape, yshape=yshape, **kwargs)
 
     def create_generator(self, **kwargs):
@@ -47,7 +45,7 @@ class gans(gandy.models.models.UncertaintyModel, deepchem.models.GAN):
         # gen_outputs = Dense(output_layer_dimension, activation=tf.nn.relu)(gen_dense_lay_1)
         # we should make above code a for loop so that num_layers is a changeable parameter
         # self.generator = tf.keras.Model(inputs=[noise_in], outputs=[gen_outputs])
-        return self.generator
+        return None
 
     def create_discriminator(self, **kwargs):
         '''
@@ -61,13 +59,12 @@ class gans(gandy.models.models.UncertaintyModel, deepchem.models.GAN):
         # discrim_lay_1 = Dense(layer_one_dimension, activation=tf.nn.relu)(data_in)
         # discrim_prob = Dense(1, activation=tf.sigmoid)(discrim_lay_1)
         # self.discriminator = tf.keras.Model(inputs=[data_in], outputs=[discrim_prob])
-        return self.discriminator
+        return None
 
     def get_noise_input_shape(self, **kwargs):
         '''
         Returns the shape of the noise vector
         '''
-        # is noise a hyperparameter?
         return noise.shape
 
     def get_data_input_shapes(self **kwargs):
@@ -75,14 +72,6 @@ class gans(gandy.models.models.UncertaintyModel, deepchem.models.GAN):
         Returns the shape of the data, which should be xshape
         '''
         return self.xshape
-
-    # DO WE NEED THIS?
-    def add_loss(self, **kwargs):
-        '''
-        Adds an appropriate GAN loss to the model
-        '''
-        # this function might not be necessary
-        return
 
     # overridden method from UncertaintyModel class
     def _build(self, **kwargs): 
@@ -92,8 +81,8 @@ class gans(gandy.models.models.UncertaintyModel, deepchem.models.GAN):
         # do something like:
         # self.create_generator(**kwargs)
         # self.create_discriminator(**kwargs)
-        # 
-        return
+        # self.n_classes = self.yshape
+        return None
 
     # overridden method from UncertaintyModel class
     def _train(self, Xs, Ys, **kwargs):
@@ -108,7 +97,7 @@ class gans(gandy.models.models.UncertaintyModel, deepchem.models.GAN):
                 ters or pass to nested functions.
         '''
 
-        return # nothing
+        return losses
 
     # overridden method from UncertaintyModel class
     def _predict(self, Xs, **kwargs):
@@ -159,9 +148,6 @@ class cgans(gans):
         '''
         # adapted from deepchem tutorial 14:
         return [(self.n_classes,)]
-
-        # noise_in = Input(shape=get_noise_input_shape())
-        # conditional_in = Input(shape=(self.n_classes,))
 
     def create_generator(self, **kwargs):
         '''
