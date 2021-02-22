@@ -35,6 +35,7 @@ class SearchableSpace:
         ## pseudocode
         #. if statement format of space
         #      set self.func, self.args, and self.name
+        return
         
 
 ## object function class to be optimized
@@ -93,6 +94,17 @@ class SubjectObjective:
     
     def _sample_params(self, trial):
         '''
+        Sample the hyperparameters to be used for this trial. Uses search spaces
+        defined at self.search_space (dict of SearchableSpace instances) to ret-
+        urn values for this trial.
+        
+        Agruments:
+            trial - Current trial.
+                type == optuna.trials.Trial
+                
+        Returns:
+            hyparms - current value of hyperparameters at trial
+                type = dict of methods
         '''
         ## pseudocode
         #. hyparams = dict loop self.search_space trial.method(args)
@@ -101,6 +113,15 @@ class SubjectObjective:
     
     def __call__(self, trial):
         '''
+        Function used by optuna to run a single trial. Returns the score to
+        minimize.
+        
+        Agruments:
+            trial - Current trial.
+                type == optuna.trials.Trial
+                
+        Returns:
+            score - value of the objective to minimize
         '''
         ## pseudocode
         #. sample hypparams for this trial
@@ -145,8 +166,6 @@ class OptRoutine:
             ucmodel_class - class to perform the optimization on
                 type == child of gandy.models.models.UncertaintyModels
                 
-            args
-                
             param_space - user defined hyperparameter search space.
                 dict of paramname: searchspace. Form of searchspace determines
                 the sampling method used. 
@@ -189,7 +208,7 @@ class OptRoutine:
         '''
         Define the search space from user input param space according to 
         gandy.models.hypersearch.SearchableSpace class. Not meant to be intera-
-        cted with directly. Reassigns stored param space if specified.
+        cted with directly. Reassigns stored param_space if specified.
         
         Arguments:
             param_space - user defined hyperparameter search space.
@@ -219,7 +238,8 @@ class OptRoutine:
         hyperparameters. Initates an instance of 
         gandy.models.hypersearch.SubjectObjective, capable of cross validation
         and pruning between sessions. Not meant to be interacted with directly.
-        
+        Reassigns stored score_kwargs if specified.
+         
         Arguments:
             score_kwargs - keyword arguments to pass to the subject's score
                 method, such as the metric to use
@@ -251,7 +271,7 @@ class OptRoutine:
     def _set_study(self, study_kwargs = None, **kwargs):
         '''
         Define the optuna study with create_study. Not meant to be interacted 
-        with directly.
+        with directly. Reassigns stored study_kwargs if specified.
         
         Arguments:
             study_kwargs - keyword arguments to pass to the optuna create_study
