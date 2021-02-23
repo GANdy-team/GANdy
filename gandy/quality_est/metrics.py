@@ -6,7 +6,6 @@ import math
 Metric_codex = {}
     
 
-
 ## Parent class for metric 
 class Metric:
     ''' 
@@ -38,14 +37,14 @@ class Metric:
         
         '''
         
-        ## pseudo code 
+        ## pseudocode 
         
         #  set self.args
     return 
 
 
 
-# Chilren classes for each relevent metric 
+## Children classes for each relevent metric 
 class MSE(Metric):
     
     '''
