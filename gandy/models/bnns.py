@@ -124,11 +124,7 @@ class bnn(gandy.models.models.UncertaintyModel):
         # loss = negative_loglikelihood(targets, estimated_distribution)
         # get train_size, i.e., train_size = xshape[0]
         
-        # if feature_names is not None:
-        #   inputs = create_model_inputs(feature_names)
-        # else:
-        #   feature_names = np.arange(num unique nums in Ys)
-        #   inputs = create_model_inputs()
+        # inputs = create_model_inputs()
         # input_values = list(inputs.values())
         # features = tf.keras.layers.concatenate(input_values)
         # features = tf.keras.layers.BatchNormalization()(features)
