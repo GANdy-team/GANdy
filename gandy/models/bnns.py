@@ -110,17 +110,27 @@ class bnn(gandy.models.models.UncertaintyModel):
     # overridden method from UncertaintyModel class
     def _build(self, **kwargs): 
         '''
-        Construct the model
+        Construct the model.
+        User has the option to specify:
+            - activation function (default = relu)
+            - optimizer (default = adam)
+            - feature names (default = column number)
+            - num of hidden units (default = 2)
         '''
         # do something like:
         # (from https://keras.io/examples/keras_recipes/bayesian_neural_networks/)
-        # feature_names = **kwargs
-        # or default feature_names = np.arange(xshape[0])
-        # activation, optimizer, loss, num_hidden_units = **kwargs
-        # or default activation = 'relu', optimizer = tf.keras.optimizers.adam
-        # num_hidden_units = 2 or from kwargs
+
+        # feature_names in **kwargs
+        # activation, num_hidden_units, optimizer, loss also in **kwargs
+
+        # default feature_names = np.arange(xshape[0]) i.e. num of features
+        # default activation = 'relu'
+        # default optimizer = tf.keras.optimizers.adam
+        # default num_hidden_units = 2
+
         # # making appropriate loss:
         # estimated_distribution = tf.keras.losses.MSE
+        # make this a hyperparamter or Gaussian?
         # loss = negative_loglikelihood(targets, estimated_distribution)
         # get train_size, i.e., train_size = xshape[0]
         
@@ -129,7 +139,7 @@ class bnn(gandy.models.models.UncertaintyModel):
         # features = tf.keras.layers.concatenate(input_values)
         # features = tf.keras.layers.BatchNormalization()(features)
 
-        # Deterministic BNNs have hidden layer weights using Dense layers.
+        # Deterministic BNNs have hidden layer weights using Dense layers whereas
         # Probabilistic BNNs have hidden layer weights using DenseVariational layers.
         # for units in num_hidden_units:
         #   features = tfp.layers.DenseVariational(
@@ -139,7 +149,8 @@ class bnn(gandy.models.models.UncertaintyModel):
         #         kl_weight=1 / train_size,
         #         activation=activation,
         #     )(features)
-        # Create a probabilisticå output (Normal distribution), and use the `Dense` layer
+
+        # Create a probabilistic output (Normal distribution), and use the Dense layer
         # to produce the parameters of the distribution.
         # We set units=2 to learn both the mean and the variance of the Normal distribution.
         # distribution_params = layers.Dense(units=2)(features)
