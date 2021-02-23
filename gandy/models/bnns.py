@@ -139,8 +139,11 @@ class bnn(gandy.models.models.UncertaintyModel):
         #         kl_weight=1 / train_size,
         #         activation=activation,
         #     )(features)
-        # The output is deterministic: a single point estimate.
-        # outputs = layers.Dense(units=1)(features)
+        # Create a probabilisticå output (Normal distribution), and use the `Dense` layer
+        # to produce the parameters of the distribution.
+        # We set units=2 to learn both the mean and the variance of the Normal distribution.
+        # distribution_params = layers.Dense(units=2)(features)
+        # outputs = tfp.layers.IndependentNormal(1)(distribution_params)
 
         # model = keras.Model(inputs=inputs, outputs=outputs)
         # model.compile(optimizer=optimizer, loss=loss)
@@ -159,7 +162,7 @@ class bnn(gandy.models.models.UncertaintyModel):
             **kwargs - keyword arguments to assign non-default training parame-
                 ters or pass to nested functions.
         '''
-
+        # losses = self.model.fit(Xs, **kwargs)
         return losses
 
     # overridden method from UncertaintyModel class
@@ -180,6 +183,7 @@ class bnn(gandy.models.models.UncertaintyModel):
                 the same length as Xs
                 type == ndarray
         '''
-        # pseudocode
-
+        # mean, std = self.model.evaluate(Xs, **kwargs)
+        # BNN model returns mean and variance as output
+        # convert to predictions and uncertainties
         return predictions, uncertainties
