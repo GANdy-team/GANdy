@@ -1,3 +1,23 @@
+"""Gaussian Process uncertainty models.
+
+Available for classifiers and regressors, use gaussian processes to make predi-
+ctions of target values and uncertainties. 
+
+    Typical usage:
+    For a set of training data Xs, Ys as arrays with non zeroth dimension
+    shapes xshape and yshape: create and train a classifier for one training
+    session.
+    
+    cfr = ucGaussianProcess.C(xshape, yshape)
+    cfr.train(Xs, Ys, session='first')
+    
+    Make predictions on a test set of data Xst, Yst with the same shapes as 
+    training:
+    predictions, uncertainties = cfr.predict(Xst)
+    
+    Score the model on the test set using an mse metric:
+    score = cfr.evaluate(Xs, Ys, metric='mse')
+"""
 ## imports
 from typing import Type, Tuple, Union
 

@@ -1,358 +1,333 @@
-## imports
-import gandy.models.models
-import optuna
+"""Optimization routine to find the best hyperparameter values for an
+UncertaintyModel.
 
+Impliment's Optuna's hyperparameter studies in order to probe hyperparameter
+values. An UncertaintyModel class is chosen as as subject for the study, and
+an objectcive function returning a cost quantity to minimize is defined that
+incorporates the studied subject and the chosen hyperparameters search spaces
+
+
+    Typical usage:
+
+    Define `search_space` a dictionary of hyperparameters and their respective 
+    space to search.
+    
+    search_space = {'hyp1': [choice1, choice2, choice3],
+                    'hyp2': (low, high, uniform)}
+                    
+    For a set of development data Xs, Ys as arrays with non zeroth dimension
+    shapes xshape and yshape:
+    
+    opt = OptRoutine(UncertaintyModel, Xs, Ys, search_space, xshape=xshape, 
+                     yshape=yshape)
+    
+    Optimize with 3 fold CV
+    opt.optimize(k=3)
+    best_params = opt.best_params # dict of the values in search_space for each
+                                  # hyp found to be best 
+"""
+
+## imports
+from typing import Tuple, Iterable, Any, Object, Type, List
+
+import optuna
+import numpy
+
+import gandy.models.models
+
+## Typing
+Model = Type[import gandy.models.models.UncertaintyModel]
+Array = Type[numpy.ndarray]
+Trial = Type[optuna.trials.Trial]
 
 ## class to specify optuna search space from python readable inputs
 class SearchableSpace:
-    '''
-    Wrapper to convert user specified search space into Optuna readable function.
-    Attributes:
-        func - optuna.trials.Trial method to be used for sampling
-            type == bound method in optuna.trials.Trial
-            
-        name - name of hyperparameter
-            type == str
-            
-        args - positional arguments after name to be passed to func for sampling
-            type == tuple
-    '''
+    """Wrapper to convert user specified search space into Optuna readable 
+    function.
     
+    Args:
+        hypname (str): 
+            Name of hyperparameter.
+        space (tuple or list):
+            The user defined hyperparameter space to search, determined by form
+            Options - TBD
+    
+    Attributes:
+        func (optuna.trials.Trial method): 
+            Function to be used for sampling of hyperparams.
+        hypname (str): 
+            Name of hyperparameter.
+        args (tuple): Positional arguments after name to be passed to func for sampling
+    """
     def __init__(self, hypname, space):
-        '''
-        Locate and store the correct Optuna search space function and assign
-        the necessary arguments.
-        
-        Arguments:
-            hypname - name of hyperparameter
-                type == str
-                
-            space - user defined search space, options below
-                list -> catagorical choice
-                tuple of ....
-                !!!!!! to be defined based on optuna.trial.methods later
-        '''
         ## pseudocode
         #. if statement format of space
-        #      set self.func, self.args, and self.name
+        #      set self.func, self.args, and self.hypname
         return
         
 
 ## object function class to be optimized
 class SubjectObjective:
-    '''
-    Class to define the objective function in an Optuna study. Not meant to be
-    interacted with directly. Supports trial pruning and cross validation.
-    '''
+    """Objective function definition in an Optuna study. 
+    
+    Not meant to be interacted with directly. Supports trial pruning and cross 
+    validation. Define an objective function for hyperparameter optimization
+    considering a subject class.
+    
+    Args:
+        subject (UncertaintyModel):
+            A class of UncertaintyModel, the subject of the study
+        Xs (ndarray): 
+            Examples feature data in the development set to use for study.
+        Ys (ndarray):
+            Examples label data in the development set to use for study.
+        param_space (dict):
+            Pairs of {hypname: sample_function} where sample_function is a 
+            optuna Trial method used for sampleing
+        sessions (int or list of str):
+            Number of training sessions to execute per model or names of
+            sessions, checking for pruning if necessary
+        k (int or): 
+            Number of folds for cross validation or tuple of fold indexes in
+            data. Default None, don't use cross validation.
+        val_data (tuple of array):
+            Validation (examples, targets) to use for scoring. Default None,
+            use Xs, Ys data.
+        val_frac (float):
+            Fraction of passed data to use for scoring. Default None, don't
+            split data.
+        **kwargs:
+            Keyword arguments to pass to constructor, training, and scoring.
+    """
     def __init__(self,
-                 subject,
-                 subject_kwargs,
-                 Xs,
-                 Ys,
-                 search_space,
-                 score_kwargs,
-                 sessions = 5,
-                 k = 5):
-        '''
-        Initiate the objective for this subject (UncertaintyModel class).
-        
-        Arguments:
-            subject - model class subject to study
-                type == child of gandy.models.UncertaintyModel
-                
-            subject_kwargs - positional and keyword arguments needed to pass to
-                subject init in order to create the desired subject. Parameters
-                not searched over.
-                type == dict
-      
-            Xs/Ys - examples and targets in the development set used to optimi-
-                ze
-                type == array like
-                
-            search_space - dict of hyperparameter search space. Keys are hyper-
-                param names and values are instances of SearchableSpace
-                type == dict
-                
-            score_kwargs - keyword arguments to be passed to the score method
-                type == dict
-                
-            sessions - number of training sessions or list of session names 
-                to run while checking for pruning
-                type == int or list
-                
-            k - number of folds or indexes in data defining folds to use for
-                cross validation
-                type == int or list of indexes
-                
-            
-        '''
+                 subject: Model,
+                 Xs: Array,
+                 Ys: Array,
+                 param_space: dict,
+                 sessions: Union[int, List[str]] = None,
+                 k: Union[int, tuple] = None,
+                 val_data: Tuple[Array] = None,
+                 val_frac: float = None
+                 **kwargs):
         ## pseudocode
-        #. assert input types
-        #. set all self inputs
-        #. parse sessions and k based on type
+        #. make sure no overlap of kwargs and param space
+        #. store kwargs
+        #. make sure only one of k, val_data, val_frac
+        #. test input type
+        #. set self attributes in proper form
         return
     
-    def _sample_params(self, trial):
-        '''
-        Sample the hyperparameters to be used for this trial. Uses search spaces
-        defined at self.search_space (dict of SearchableSpace instances) to ret-
-        urn values for this trial.
+    def _sample_params(self, trial: Trial) -> dict:
+        """Sample the hyperparameters to be used for this trial. 
         
-        Agruments:
-            trial - Current trial.
-                type == optuna.trials.Trial
+        Uses space defined at self.param_space (dict of SearchableSpace instances) 
+        to return values for this trial.
+        
+        Args:
+            trial (optuna Trial):
+                Current trial.
                 
         Returns:
-            hyparms - current value of hyperparameters at trial
-                type = dict of methods
-        '''
+            hyparms (dict):
+                Mapping of hyperparameter values to use for this trial
+        """
         ## pseudocode
         #. hyparams = dict loop self.search_space trial.method(args)
-        
         return hyparams
     
-    def __call__(self, trial):
-        '''
-        Function used by optuna to run a single trial. Returns the score to
-        minimize.
+    def _execute_instance(self, 
+                          hyparams: dict,
+                          train_data: Tuple[Array],
+                          val_data: Tuple[Array]) -> float:
+        """Train and score on validation data a single subject instance.
         
-        Agruments:
-            trial - Current trial.
-                type == optuna.trials.Trial
+        Args:
+            hyparms (dict):
+                Mapping of hyperparameter values to use for this trial
+            train_data (tuple of ndarray):
+                Training (examples, targets) to use for scoring. 
+            val_data (tuple of ndarray)
+                Validation (examples, targets) to use for scoring.
                 
         Returns:
-            score - value of the objective to minimize
-        '''
+            float: 
+                The score of the model on the validation data.
+        """
+        ## pseudocode
+        #. construct model with hyparms and self kwargs
+        #. train model with hyparms and self kwargs
+        #. score model with self kwargs
+        return single_score
+    
+    def __call__(self,  trial: Trial) -> float:
+        """Function used by optuna to run a single trial. Returns the score to
+        minimize.
+        
+        Args:
+            trial (optuna Trial):
+                Current trial.
+                
+        Returns:
+            float: 
+                The score of this trial, the quantity to minimize.
+        """
         ## pseudocode
         #. sample hypparams for this trial
-        
-        #. split Xs Ys into folds according to k
-        
-        #. instantiate k subjects
-        
-        #. loop for each session
-        #     loop for each fold/model
-        #         model train method with hyperparams
-        #         model score method with score kwargs
-        #     session score = average scores
-        #     report average score, check if prune
+        #. depending on val_data, k, or val_frac
+        #.    split data based on above
+        #.    for each session, execute instances
+        #.    check for prune
         return score
     
 
 ## Hyperparameter search class wrapper for our models and optuna
 class OptRoutine:
-    '''
-    Hyperparameter optimizing routine for uncertainty models. Searches over
-    hyperparemeters for a class of uncertainty model for the set producing the
-    lowest value of a passed loss metric. Uses a cross validation routine and
-    is capable of pruning non-promising models between training sessions. 
-    Optimizes objective function of the form 
-    gandy.models.hypersearch.SubjectObjective.
-    '''
+    """Hyperparameter optimizing routine for uncertainty models. 
     
+    Searches over hyperparemeters for a class of uncertainty model for the set
+    producing thelowest value of a passed loss metric. Uses a cross validation 
+    routine and is capable of pruning non-promising models between training 
+    sessions. Optimizes objective function of the form 
+    `gandy.models.hypersearch.SubjectObjective`.
     
-    def __init__(self, ucmodel_class, 
-                 Xs, Ys,
-                 subject_kwargs = {}
-                 param_space = None,
-                 score_kwargs = None,
-                 study_kwargs = None,
+    Args:
+        subject (UncertaintyModel):
+            A class of UncertaintyModel, the subject of the study
+        Xs (Iterable): 
+            Examples feature data in the development set to use for study.
+        Ys (Iterable):
+            Examples label data in the development set to use for study.
+        search_space (dict): 
+            Mapping of the hyperparameters to search over as {name: space}
+            where space represents a search space based on its format.
+            Options - TBD
+    """
+    def __init__(self, 
+                 subject: Model, 
+                 Xs: Iterable,
+                 Ys: Iterable,
+                 search_space = None,
                  **kwargs):
-        '''
-        Initialize the routine and define the model class that will be optimi-
-        zed.
-        
-        Arguments:
-            ucmodel_class - class to perform the optimization on
-                type == child of gandy.models.models.UncertaintyModels
-                
-            param_space - user defined hyperparameter search space.
-                dict of paramname: searchspace. Form of searchspace determines
-                the sampling method used. 
-                See gandy.models.hypersearch.SearchableSpace for formats
-                type == dict
-                
-            score_kwargs - keyword arguments to pass to the subject's score
-                method, such as the metric to use
-                type == dict
-                
-            study_kwargs - keyword arguments to pass to the optuna create_study
-                function, such as a pruner to user
-                type == dict
-                
-            subject_kwargs - positional and keyword arguments needed to pass
-                to subject init in order to create the desired subject. 
-                Parameters not searched over.
-                type == dict
-                
-            **kwargs - additional keyword arguments to pass to construction
-        '''
         ## pseudocode 
         #. assert class type is child of uncertainty model
-        
         #. set the class to self.subject
-        
-        #. set self the Xs and Ys data
-        
-        #. set subject_kwargs here
-        
-        #. set search space with param space and kwargs
-        
-        #. set objective with score kwargs and kwargs
-        
-        #. set study with study kwargs and kwargs
-        
+        #. set self the Xs and Ys data after taking values
+        #. save all_kwargs
         return
     
-    def _set_search_space(self, param_space = None, **kwargs):
-        '''
-        Define the search space from user input param space according to 
-        gandy.models.hypersearch.SearchableSpace class. Not meant to be intera-
-        cted with directly. Reassigns stored param_space if specified.
+    def _set_param_space(self, **kwargs):
+        """Define the search space from user input search space according to 
+        gandy.models.hypersearch.SearchableSpace class. 
         
-        Arguments:
-            param_space - user defined hyperparameter search space.
-                dict of paramname: searchspace. Form of searchspace determines
-                the sampling method used. 
-                See gandy.models.hypersearch.SearchableSpace for formats
-                type == dict
-                
-        '''
+        Not meant to be interacted with directly. Reassigns stored search_space 
+        if specified.
+        """
         ## pseudocode
-        #. if param_space, set self.param_space
-        
-        #. check self.param_space input
-        #     pass if None
-        
-        #. create empty search_space
-        
+        #. check self.search_space input
+        #     raise if None
+        #. create empty param_space
         #. for loop self.param_space
-        #     search_space = SearchableSpace class
-        
-        # set self.search_space_
+        #     param_space = SearchableSpace class
+        # set self._param_space
         return 
     
-    def _set_objective(self, score_kwargs = None, **kwargs):
-        '''
-        Define the objective function for optuna to target when optimizing
-        hyperparameters. Initates an instance of 
-        gandy.models.hypersearch.SubjectObjective, capable of cross validation
-        and pruning between sessions. Not meant to be interacted with directly.
-        Reassigns stored score_kwargs if specified.
+    def _set_objective(self, **kwargs):
+        """Define the objective function for optuna to target when optimizing
+        hyperparameters. 
+        
+        Initates an instance of gandy.models.hypersearch.SubjectObjective, 
+        capable of cross validation and pruning between sessions. Not meant to 
+        be interacted with directly.
          
-        Arguments:
-            score_kwargs - keyword arguments to pass to the subject's score
-                method, such as the metric to use
-                type == dict
-                
-            **kwargs - keyword arguments to pass to SubjectObjective class,
-                such as the number of cross validation folds
-        '''
+        Args:
+            **kwargs: 
+                Keyword arguments to pass to SubjectObjective class,
+                such as the number of cross validation folds or constructor
+                kwargs
+        """
         ## pseudocode
-        #. check self.search_space_ exists
-        #.   pass if not
-        
-        #. if score_kwargs, set self.score_kwargs
-        
-        #. if self.score_kwargs = None, set to {} (empty dict)
-        
+        #. check self._param_space exists
+        #.   try to set if not
         #. define SubjectObjective(
         #          self.subject,
-#                  self.subject_kwargs,
 #                  self.Xs,
 #                  self.Ys,
-#                  self.search_space_,
-#                  self.score_kwargs,
 #                  **kwargs)
         
-        #. set self.objective_
+        #. set self.objective
         return
     
-    def _set_study(self, study_kwargs = None, **kwargs):
-        '''
-        Define the optuna study with create_study. Not meant to be interacted 
-        with directly. Reassigns stored study_kwargs if specified.
+    def _set_study(self, **kwargs):
+        """Define the optuna study with create_study. 
         
-        Arguments:
-            study_kwargs - keyword arguments to pass to the optuna create_study
-                function, such as a pruner to user
-                type == dict
-                
-            **kwargs - additional keyword arguments
-        '''
+        Not meant to be interacted with directly. Creates the study to be used
+        
+        Args:  
+            **kwargs:
+                Keyword arguments for optuna create study.
+        """
         ## pseudocode
-        #. if study_kwargs, set self.study_kwargs
-        
-        #. if self.study_kwargs is None, reset to {}
-
-        #. create study optuna.create_study(**self.study_kwargs)
-        #. set to self.study_
+        #. create study optuna.create_study
+        #. set to self.study
         return
     
     def optimize(self, 
-                 param_space = None, 
-                 scoring_kwargs = None, 
-                 study_kwargs = None, 
-                 **kwargs):
-        '''
-        Run the optimization study and save the best parameters. Return the
+                 search_space: dict = None, 
+                 **kwargs) -> float:
+        """Run the optimization study and save the best parameters. Return the
         best model's score.
         
-        Arguments:
-            (optional if already set)
-             param_space - user defined hyperparameter search space.
-                dict of paramname: searchspace. Form of searchspace determines
-                the sampling method used. 
-                See gandy.models.hypersearch.SearchableSpace for formats
-                type == dict
-                
-            score_kwargs - keyword arguments to pass to the subject's score
-                method, such as the metric to use
-                type == dict
-                
-            study_kwargs - keyword arguments to pass to the optuna create_study
-                function, such as a pruner to user
-                type == dict
+        Args:
+            search_space (dict): 
+                Mapping of the hyperparameters to search over as {name: space}
+                where space represents a search space based on its format.
+                Options - TBD
+            **kwargs:
+                Keyword arguments to pass to constructor, optimizer, etc.
                 
         Returns:
-            best_score - best average score of hyperparameters
-                type == float
-        '''
+            best_score (float):
+                best score of all hyperparameters searched
+        """
         ## psuedocode
-        #. if param_space specified, set search space
-        
-        #. if scoring_kwargs specified, set objective
-        #. assert objective_ exists
-        
-        #. if study_kwargs specified, set study
-        #. assert study_ exists
-        
-        #. optimize self.study_ with optimizer kwargs
-        
+        #. if search_space specified set
+        #. update all kwargs with these
+        #. set optimizer, study with all kwargs
         #. set self.best_params
-        
         #. get best_score
-        
         return best_score
     
-    def train_best(self):
-        '''
-        Train the subject on the entire dataset with the best found parameters.
-        Requires self.optimize to have been executed
+    def train_best(self, **kwargs) -> Model:
+        """Train the subject on the entire dataset with the best found parameters.
+        
+        Requires self.optimize to have been executed or best_params to have been
+        specified.
+        
+        Args:
+            **kwargs: 
+                Keyword arguments to pass to the constructor and trainer
         
         Returns:
-            best_model - instance of subject with specified static and best 
-                searched hyperparameters trained on entire dataset.
-        '''
+            best_model (UncertaintyModel):
+                Instance of subject with specified static and best searched 
+                hyperparameters trained on entire dataset.
+        """
         ## pseudocode
         #. check best_params exist
-        
-        #. Initiate model with subject_kwargs and best_params
-        
-        #. train model with best_params training
-        
+        #. update all kwargs
+        #. Initiate model with  and best_params and kwargs
+        #. train model with best_params training and kwargs
         #. set self.best_model
-        
         return best_model
         
+    @property
+    def search_space(self):
+        """dict: hyperparameter name to search space parirings"""
+        return self._search_space
+    
+    @search_space.setter(self, new_search_space):
+        ## pseudocode
+        #. check dict
+        self._search_space = new_search_space
+        return
         

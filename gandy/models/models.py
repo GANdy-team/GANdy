@@ -10,13 +10,14 @@ ish building, training, predicting, and evaluateing.
     `_build`, `_train`, and `_predict` in order to function properly.
 """
 ## imports
-from typing import Tuple, Iterable, Any, Object
+from typing import Tuple, Iterable, Any, Object, Type
+
 import numpy
 
 import gandy.metrics
 
 ## typing
-Array = numpy.ndarray
+Array = Type[numpy.ndarray]
 
 class NotImplimented(Warning):
     """Warning to indicate that a child class has not yet implimented necessary
@@ -46,9 +47,6 @@ class UncertaintyModel:
             shape of target data, excluding the first dimension
         **kwargs:
             keyword arguments to pass to the build method
-                
-    Attributes:
-        
     """
     
     ## to contain dictionary of callable metric classes from the metrics module
