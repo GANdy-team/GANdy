@@ -1,6 +1,7 @@
-## imports
+# imports
 import gandy.models.models
 import tensorflow as tf
+
 
 class bnn(gandy.models.models.UncertaintyModel):
     '''
@@ -24,13 +25,13 @@ class bnn(gandy.models.models.UncertaintyModel):
         '''
         Arguments:
             feature_names - example data to make predictions on
-                type == ndarray, list, or dictionary      
+                type == ndarray, list, or dictionary
         Returns:
-            inputs 
+            inputs
                 type == dictionary of Keras Input layers
         '''
         # do something like:
-        # (from https://keras.io/examples/keras_recipes/bayesian_neural_networks/)
+        # https://keras.io/examples/keras_recipes/bayesian_neural_networks/
         # inputs = {}
         # for feature_name in feature_names:
         #     inputs[feature_name] = tf.keras.layers.Input(
@@ -46,7 +47,7 @@ class bnn(gandy.models.models.UncertaintyModel):
             bias_size
                 type == float or int
         Returns:
-            prior model 
+            prior model
                 type == Keras sequential model
         '''
         # from keras tutorial:
@@ -63,9 +64,9 @@ class bnn(gandy.models.models.UncertaintyModel):
         # )
         return prior_model
 
-    # Define variational posterior weight distribution as multivariate Gaussian.
-    # Note that the learnable parameters for this distribution are the means,
-    # variances, and covariances.
+    # Define variational posterior weight distribution as multivariate
+    # Gaussian. Note that the learnable parameters for this
+    # distribution are the means, variances, and covariances.
     def posterior(kernel_size, bias_size, dtype=None):
         '''
         Arguments:
@@ -74,90 +75,97 @@ class bnn(gandy.models.models.UncertaintyModel):
             bias_size
                 type == float or int
         Returns:
-            posterior model 
+            posterior model
                 type == Keras sequential model
         '''
         # n = kernel_size + bias_size
         # posterior_model = keras.Sequential(
         #     [
         #         tfp.layers.VariableLayer(
-        #             tfp.layers.MultivariateNormalTriL.params_size(n), dtype=dtype
+        #            tfp.layers.MultivariateNormalTriL.params_size(n),
+        #            dtype=dtype
         #         ),
         #         tfp.layers.MultivariateNormalTriL(n),
         #     ]
         # )
         return posterior_model
 
-    # Since the output of the model is a distribution, rather than a point estimate,
-    # we use the negative loglikelihood as our loss function to compute how likely to
-    # see the true data (targets) from the estimated distribution produced by the model.
+    # Since the output of the model is a distribution, rather than a
+    # point estimate, we use the negative loglikelihood as our loss function
+    # to compute how likely to see the true data (targets) from the
+    # estimated distribution produced by the model.
     def negative_loglikelihood(targets, estimated_distribution):
         '''
         Arguments:
             targets - training targets
                 type == ndarray
-            estimated_distribution - 
-                type == function that has a log probability (keras loss e.g.)    
+            estimated_distribution -
+                type == function that has a log probability (keras loss e.g.)
         Returns:
-            negative log likelihood  
+            negative log likelihood
                 type == ndarray
         '''
         # do something like:
-        # (from https://keras.io/examples/keras_recipes/bayesian_neural_networks/)
+        # https://keras.io/examples/keras_recipes/bayesian_neural_networks/
         # return -estimated_distribution.log_prob(targets)
 
-
     # overridden method from UncertaintyModel class
-    def _build(self, **kwargs): 
+    def _build(self, features=None, units=[10], activation='relu', **kwargs):
         '''
         Construct the model.
         User has the option to specify:
-            - activation function (default = relu)
-            - optimizer (default = adam)
+            optional params:
             - feature names (default = column number)
-            - num of hidden units (default = 2)
+            - hidden unit layer size (default = [10])
+            - activation (default = 'relu')
+            kwargs can include:
+            - loss (default = relu)
+            - optimizer (default = adam)
+            or anything needed to compile model
+            (think about default vals for required params)
         '''
         # do something like:
-        # (from https://keras.io/examples/keras_recipes/bayesian_neural_networks/)
+        # https://keras.io/examples/keras_recipes/bayesian_neural_networks/
 
-        # feature_names in **kwargs
-        # activation, num_hidden_units, optimizer, loss also in **kwargs
+        # if features is None:
+        #     features = np.arange(xshape[0])
 
-        # default feature_names = np.arange(xshape[0]) i.e. num of features
         # default activation = 'relu'
         # default optimizer = tf.keras.optimizers.adam
-        # default num_hidden_units = 2
+        # default loss = tf.keras.losses.MSE
 
         # # making appropriate loss:
-        # estimated_distribution = tf.keras.losses.MSE
+        # estimated_distribution = loss
         # make this a hyperparamter or Gaussian?
         # loss = negative_loglikelihood(targets, estimated_distribution)
         # get train_size, i.e., train_size = xshape[0]
-        
+
         # inputs = create_model_inputs()
         # input_values = list(inputs.values())
         # features = tf.keras.layers.concatenate(input_values)
         # features = tf.keras.layers.BatchNormalization()(features)
 
-        # Deterministic BNNs have hidden layer weights using Dense layers whereas
-        # Probabilistic BNNs have hidden layer weights using DenseVariational layers.
-        # for units in num_hidden_units:
+        # Deterministic BNNs = layer weights using Dense layers whereas
+        # Probabilistic BNNs = layer weights using DenseVariational layers.
+        # for unit in units:
         #   features = tfp.layers.DenseVariational(
-        #         units=units,
-        #         make_prior_fn=self.prior, 
+        #         units=unit,
+        #         make_prior_fn=self.prior,
         #         make_posterior_fn=self.posterior,
         #         kl_weight=1 / train_size,
         #         activation=activation,
         #     )(features)
 
-        # Create a probabilistic output (Normal distribution), and use the Dense layer
-        # to produce the parameters of the distribution.
-        # We set units=2 to learn both the mean and the variance of the Normal distribution.
+        # Create a probabilistic output (Normal distribution),
+        # and use the Dense layer to produce the parameters of
+        # the distribution.
+        # We set units=2 to learn both the mean and the variance of the
+        # Normal distribution.
         # distribution_params = layers.Dense(units=2)(features)
         # outputs = tfp.layers.IndependentNormal(1)(distribution_params)
 
         # model = keras.Model(inputs=inputs, outputs=outputs)
-        # model.compile(optimizer=optimizer, loss=loss)
+        # model.compile(**kwargs)
         # self.model = model
         return None
 
@@ -165,11 +173,11 @@ class bnn(gandy.models.models.UncertaintyModel):
     def _train(self, Xs, Ys, **kwargs):
         '''
         Trains GAN model on data
-        
+
         Arguments:
             Xs/Ys - training examples/targets
                 type == ndarray
-            
+
             **kwargs - keyword arguments to assign non-default training parame-
                 ters or pass to nested functions.
         '''
@@ -178,19 +186,19 @@ class bnn(gandy.models.models.UncertaintyModel):
 
     # overridden method from UncertaintyModel class
     def _predict(self, Xs, **kwargs):
-        '''        
+        '''
         Arguments:
             Xs - example data to make predictions on
                 type == ndarray
-                
+
             **kwargs - keyword arguments for predicting
-                
+
         Returns:
             predictions - array of predictions of targets with the same length
                 as Xs
                 type == ndarray
-                
-            uncertainties - array of prediction uncertainties of targets with 
+
+            uncertainties - array of prediction uncertainties of targets with
                 the same length as Xs
                 type == ndarray
         '''
