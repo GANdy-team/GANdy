@@ -16,7 +16,7 @@ class Metric:
     
     '''
     
-    def __init__(self, predictions, uncertainties = None, real):
+    def __init__(self, predictions, real, uncertainties = None):
         '''
         
         Initializes an instance of the metric class, including the predictions, uncertainties (optional), and real data
