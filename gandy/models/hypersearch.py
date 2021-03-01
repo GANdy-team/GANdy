@@ -36,7 +36,7 @@ import numpy
 import gandy.models.models
 
 ## Typing
-Model = Type[import gandy.models.models.UncertaintyModel]
+Model = Type[gandy.models.models.UncertaintyModel]
 Array = Type[numpy.ndarray]
 Trial = Type[optuna.trials.Trial]
 
@@ -157,7 +157,7 @@ class SubjectObjective:
         #. construct model with hyparms and self kwargs
         #. train model with hyparms and self kwargs
         #. score model with self kwargs
-        return single_score
+        return single_loss
     
     def __call__(self,  trial: Trial) -> float:
         """Function used by optuna to run a single trial. Returns the score to
@@ -177,7 +177,7 @@ class SubjectObjective:
         #.    split data based on above
         #.    for each session, execute instances
         #.    check for prune
-        return score
+        return loss
     
 
 ## Hyperparameter search class wrapper for our models and optuna
@@ -325,7 +325,8 @@ class OptRoutine:
         """dict: hyperparameter name to search space parirings"""
         return self._search_space
     
-    @search_space.setter(self, new_search_space):
+    @search_space.setter
+    def search_space(self, new_search_space):
         ## pseudocode
         #. check dict
         self._search_space = new_search_space
