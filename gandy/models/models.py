@@ -58,7 +58,6 @@ class UncertaintyModel:
                  yshape: Tuple[int], 
                  **kwargs):
         ## pseudocode
-        #. assert inputs
         #. set self shapes
         #. assign self model by running build function
         #. create empty sessions list   
@@ -133,6 +132,7 @@ class UncertaintyModel:
               Xs: Iterable,
               Ys: Iterable, 
               session: str = None, 
+              metric: Union[str, Callable],
               **kwargs):
         """Train the predictor for one session, handled by `_train`.
         
@@ -148,6 +148,9 @@ class UncertaintyModel:
             session (str): 
                 Name of training session for storing in losses. default None,
                 incriment new name.
+            metric (str):
+                Metric to use, a key in UncertaintyModel.metrics or a metric object
+                that takes as input true, predicted, and uncertainty values.
             **kwargs: 
                 Keyword arguments to pass to `_train` and assign non-default \
                 training parameters.
@@ -282,25 +285,40 @@ class UncertaintyModel:
         #. if statement to get metric object from metrics or specified
         #. else raise undefined metric
         #. check data
-        #. predictions, uncertainties = execute self.predict on Xs
+        #. predictions, uncertainties = execute self._predict on Xs
         #. pass predictions, uncertainties to metric get back costs
-        return cost, costs
+        return metric_value, metric_values
         
     def save(self, 
              filename: str, 
-             format: str = 'h5', 
              **kwargs):
         """Save the model out of memory to the hard drive by specified format.
         
+        Save to model to hardrive as two files, "`filename`.json" and 
+        "`filename`.XX" where the XX is determined by the predictor type
+        
         Args:
             filename (str): 
-                path to save model to
-            format (str): string name of format to use
-                options: TBD
+                path to save model to, no extension
+            **kwargs:
+                keyword arguments to pass to _save, child specified method
         """
         ## pseudocode
-        #. if statements on format
-        #   save accordingly
+        #. execute _save with filename
+        #. save json with xshape, yshape, sesssions, etc.
+        return
+    
+    def _save(filename: str,
+              **kwargs):
+        """Method defined by child to save the predictor.
+        
+        Method must save into memory the object at self.model
+        
+        Args:
+            filename (str): 
+                name of file to save model to
+        """
+        ## raise not implimented
         return
     
     @classmethod
@@ -309,16 +327,38 @@ class UncertaintyModel:
              **kwargs):
         """Load a model from hardrive at filename.
         
+        From two files, "`filename`.json" and "`filename`.XX" where the XX is 
+        determined by the predictor type, load the model into memory.
+        
         Args:
-            filename (str): path of file to load
+            filename (str): 
+                path of file to load
+            **kwargs:
+                keyword arguments to pass to _load
             
         Returns:
             instance of class: the loaded UncertaintyModel
         """
         ## pseudocode
-        #. if statements on filename
-        #.   create instance of this class
+        #. load the json and run cls(args)
+        #. predictor = _load
+        #. instance._model = predictor
         return instance
+    
+    def _load(self,
+             filename: str, 
+             **kwargs):
+        """Method defined by child to load a predictor into memory.
+        
+        Loads the object to be assigned to self.model.
+        
+        Args:
+            filename (str): 
+                path of file to load
+        """
+        ## raise not implimented
+        #. model = None
+        return model
     
     @property
     def model(self):
@@ -340,7 +380,8 @@ class UncertaintyModel:
         """tuple of int: shape of example features"""
         return self._xshape
     
-    @xshape.setter(self, new_xshape):
+    @xshape.setter
+    def xshape(self, new_xshape):
         ## test new shape, delete model
         self._xshape = new_xshape
         return
@@ -350,7 +391,8 @@ class UncertaintyModel:
         """tuple of int: shape of example label"""
         return self._yshape
     
-    @yshape.setter(self, new_yshape):
+    @yshape.setter
+    def yshape(self, new_yshape):
         ## test new shape, delete model
         self._yshape = new_yshape
         return
