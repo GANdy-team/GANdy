@@ -26,7 +26,7 @@ class bnn(gandy.models.models.UncertaintyModel):
     for a guide to implementing a BNN with Keras.
     '''
 
-    def create_model_inputs(self, feature_names):
+    def create_model_inputs(self, feature_names) -> Tuple[Object]:
         '''
         Arguments:
             feature_names - example data to make predictions on
@@ -44,7 +44,7 @@ class bnn(gandy.models.models.UncertaintyModel):
         #     )
         # return inputs
 
-    def prior(kernel_size, bias_size, dtype=None):
+    def prior(kernel_size, bias_size, dtype=None) -> Object:
         '''
         Arguments:
             kernel_size
@@ -72,7 +72,7 @@ class bnn(gandy.models.models.UncertaintyModel):
     # Define variational posterior weight distribution as multivariate
     # Gaussian. Note that the learnable parameters for this
     # distribution are the means, variances, and covariances.
-    def posterior(kernel_size, bias_size, dtype=None):
+    def posterior(kernel_size, bias_size, dtype=None) -> Object:
         '''
         Arguments:
             kernel_size

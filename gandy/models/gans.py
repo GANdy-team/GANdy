@@ -4,6 +4,11 @@ can be found here:
 https://github.com/deepchem/deepchem/blob/master/examples/tutorials/
     14_Conditional_Generative_Adversarial_Networks.ipynb
 '''
+
+# gandy imports
+import gandy.models.models
+import gandy.metrics
+
 # deep learning imports
 import deepchem
 import tensorflow as tf
@@ -13,10 +18,6 @@ from typing import Tuple, Iterable, Any, Object, Type
 
 # typing
 Array = Type[numpy.ndarray]
-
-# gandy imports
-import gandy.models.models
-import gandy.metrics
 
 
 class gan(deepchem.models.GAN, gandy.models.models.UncertaintyModel):
@@ -104,7 +105,8 @@ class gan(deepchem.models.GAN, gandy.models.models.UncertaintyModel):
         # self.create_generator(**kwargs)
         # self.create_discriminator(**kwargs)
         # self.n_classes = self.yshape
-        return {'generator': self.generator, 'discriminator': self.discriminator}
+        return {'generator': self.generator,
+                'discriminator': self.discriminator}
 
     # overridden method from UncertaintyModel class
     def _train(self,
@@ -126,9 +128,9 @@ class gan(deepchem.models.GAN, gandy.models.models.UncertaintyModel):
         return losses
 
     # overridden method from UncertaintyModel class
-    def _predict(self, 
-                 Xs: Array, 
-                 *args, 
+    def _predict(self,
+                 Xs: Array,
+                 *args,
                  **kwargs):
         '''
         Arguments:
@@ -154,32 +156,29 @@ class gan(deepchem.models.GAN, gandy.models.models.UncertaintyModel):
         # the above code generates points, but we need uncertainties as well
         return predictions, uncertainties
 
-        def _save(filename: str,
-              **kwargs):
-        """Method defined by child to save the predictor.
-        
-        Method must save into memory the object at self.model
-        
-        Args:
-            filename (str): 
-                name of file to save model to
-        """
-        # save model aka generator and discriminator separately
-        return None
+        def _save(filename: str, **kwargs):
+            """Method defined by child to save the predictor.
 
-        def _load(self,
-             filename: str, 
-             **kwargs):
-        """Method defined by child to load a predictor into memory.
-        
-        Loads the object to be assigned to self.model.
-        
-        Args:
-            filename (str): 
-                path of file to load
-        """
-        # call Keras.load function
-        return model
+            Method must save into memory the object at self.model
+
+            Args:
+                filename (str):
+                    name of file to save model to
+            """
+            # save model aka generator and discriminator separately
+            return None
+
+        def _load(self, filename: str, **kwargs):
+            """Method defined by child to load a predictor into memory.
+
+            Loads the object to be assigned to self.model.
+
+            Args:
+                filename (str):
+                    path of file to load
+            """
+            # call Keras.load function
+            return model
 
 
 class cgan(gan):
