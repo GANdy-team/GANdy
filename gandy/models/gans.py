@@ -156,29 +156,29 @@ class gan(deepchem.models.GAN, gandy.models.models.UncertaintyModel):
         # the above code generates points, but we need uncertainties as well
         return predictions, uncertainties
 
-        def _save(filename: str, **kwargs):
-            """Method defined by child to save the predictor.
+    def _save(filename: str, **kwargs):
+        """Method defined by child to save the predictor.
 
-            Method must save into memory the object at self.model
+        Method must save into memory the object at self.model
 
-            Args:
-                filename (str):
-                    name of file to save model to
-            """
-            # save model aka generator and discriminator separately
-            return None
+        Args:
+            filename (str):
+                name of file to save model to
+        """
+        # save model aka generator and discriminator separately
+        return None
 
-        def _load(self, filename: str, **kwargs):
-            """Method defined by child to load a predictor into memory.
+    def _load(self, filename: str, **kwargs):
+        """Method defined by child to load a predictor into memory.
 
-            Loads the object to be assigned to self.model.
+        Loads the object to be assigned to self.model.
 
-            Args:
-                filename (str):
-                    path of file to load
-            """
-            # call Keras.load function
-            return model
+        Args:
+            filename (str):
+                path of file to load
+        """
+        # call Keras.load function
+        return model
 
 
 class cgan(gan):
