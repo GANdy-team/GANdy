@@ -7,6 +7,12 @@ https://keras.io/examples/keras_recipes/bayesian_neural_networks/
 import gandy.models.models
 import tensorflow as tf
 
+# typing imports
+from typing import Tuple, Iterable, Any, Object, Type
+
+# typing
+Array = Type[numpy.ndarray]
+
 
 class bnn(gandy.models.models.UncertaintyModel):
     '''
@@ -99,7 +105,7 @@ class bnn(gandy.models.models.UncertaintyModel):
     # point estimate, we use the negative loglikelihood as our loss function
     # to compute how likely to see the true data (targets) from the
     # estimated distribution produced by the model.
-    def negative_loglikelihood(targets, estimated_distribution):
+    def negative_loglikelihood(targets, estimated_distribution) -> Array:
         '''
         Arguments:
             targets - training targets
@@ -115,11 +121,12 @@ class bnn(gandy.models.models.UncertaintyModel):
         # return -estimated_distribution.log_prob(targets)
 
     # overridden method from UncertaintyModel class
-    def _build(self, features=None, units=[10], activation='relu', **kwargs):
+    def _build(self, *args, **kwargs) -> Object:
         '''
         Construct the model.
         User has the option to specify:
-            optional params:
+            optional params in args:
+            (features=None, units=[10], activation='relu' = args*)
             - feature names (default = column number)
             - hidden unit layer size (default = [10])
             - activation (default = 'relu')
@@ -175,7 +182,11 @@ class bnn(gandy.models.models.UncertaintyModel):
         return self.model
 
     # overridden method from UncertaintyModel class
-    def _train(self, Xs, Ys, **kwargs):
+    def _train(self,
+               Xs: Array,
+               Ys: Array,
+               *args,
+               **kwargs) -> Any:
         '''
         Trains GAN model on data
 
@@ -190,7 +201,10 @@ class bnn(gandy.models.models.UncertaintyModel):
         return losses
 
     # overridden method from UncertaintyModel class
-    def _predict(self, Xs, **kwargs):
+    def _predict(self,
+                 Xs: Array,
+                 *args,
+                 **kwargs):
         '''
         Arguments:
             Xs - example data to make predictions on
@@ -211,3 +225,27 @@ class bnn(gandy.models.models.UncertaintyModel):
         # BNN model returns mean and variance as output
         # convert to predictions and uncertainties
         return predictions, uncertainties
+
+        def _save(filename: str, **kwargs):
+            """Method defined by child to save the predictor.
+
+            Method must save into memory the object at self.model
+
+            Args:
+                filename (str):
+                    name of file to save model to
+            """
+            # call Keras save function
+            return None
+
+        def _load(self, filename: str, **kwargs):
+            """Method defined by child to load a predictor into memory.
+
+            Loads the object to be assigned to self.model.
+
+            Args:
+                filename (str):
+                    path of file to load
+            """
+            # call Keras.load function
+            return model
