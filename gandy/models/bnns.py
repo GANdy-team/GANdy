@@ -1,3 +1,8 @@
+'''
+This contains the Bayes NN class, based on the KEras tutorial at
+https://keras.io/examples/keras_recipes/bayesian_neural_networks/
+'''
+
 # imports
 import gandy.models.models
 import tensorflow as tf
@@ -167,7 +172,7 @@ class bnn(gandy.models.models.UncertaintyModel):
         # model = keras.Model(inputs=inputs, outputs=outputs)
         # model.compile(**kwargs)
         # self.model = model
-        return None
+        return self.model
 
     # overridden method from UncertaintyModel class
     def _train(self, Xs, Ys, **kwargs):

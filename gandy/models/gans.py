@@ -4,10 +4,19 @@ can be found here:
 https://github.com/deepchem/deepchem/blob/master/examples/tutorials/
     14_Conditional_Generative_Adversarial_Networks.ipynb
 '''
-# imports
-import gandy.models.models
+# deep learning imports
 import deepchem
 import tensorflow as tf
+
+# typing imports
+from typing import Tuple, Iterable, Any, Object, Type
+
+# typing
+Array = Type[numpy.ndarray]
+
+# gandy imports
+import gandy.models.models
+import gandy.metrics
 
 
 class gan(deepchem.models.GAN, gandy.models.models.UncertaintyModel):
@@ -28,7 +37,10 @@ class gan(deepchem.models.GAN, gandy.models.models.UncertaintyModel):
     This class builds off of the deepchem GAN class.
     '''
 
-    def __init__(self, xshape, yshape, **kwargs):
+    def __init__(self,
+                 xshape: Tuple[int],
+                 yshape: Tuple[int],
+                 **kwargs):
         '''
         Initializes instance of a GAN
         '''
@@ -71,20 +83,20 @@ class gan(deepchem.models.GAN, gandy.models.models.UncertaintyModel):
         #                 outputs=[discrim_prob])
         return None
 
-    def get_noise_input_shape(self, **kwargs):
+    def get_noise_input_shape(self, **kwargs) -> Tuple[int]:
         '''
         Returns the shape of the noise vector
         '''
         return noise.shape
 
-    def get_data_input_shapes(self, **kwargs):
+    def get_data_input_shapes(self, **kwargs) -> Tuple[int]:
         '''
         Returns the shape of the data, which should be xshape
         '''
         return self.xshape
 
     # overridden method from UncertaintyModel class
-    def _build(self, **kwargs):
+    def _build(self, **kwargs) -> Object:
         '''
         Construct the model
         '''
@@ -92,10 +104,14 @@ class gan(deepchem.models.GAN, gandy.models.models.UncertaintyModel):
         # self.create_generator(**kwargs)
         # self.create_discriminator(**kwargs)
         # self.n_classes = self.yshape
-        return None
+        return {'generator': self.generator, 'discriminator': self.discriminator}
 
     # overridden method from UncertaintyModel class
-    def _train(self, Xs, Ys, **kwargs):
+    def _train(self,
+               Xs: Array,
+               Ys: Array,
+               *args,
+               **kwargs) -> Any:
         '''
         Trains GAN model on data
 
@@ -110,7 +126,10 @@ class gan(deepchem.models.GAN, gandy.models.models.UncertaintyModel):
         return losses
 
     # overridden method from UncertaintyModel class
-    def _predict(self, Xs, **kwargs):
+    def _predict(self, 
+                 Xs: Array, 
+                 *args, 
+                 **kwargs):
         '''
         Arguments:
             Xs - example data to make predictions on
@@ -135,6 +154,33 @@ class gan(deepchem.models.GAN, gandy.models.models.UncertaintyModel):
         # the above code generates points, but we need uncertainties as well
         return predictions, uncertainties
 
+        def _save(filename: str,
+              **kwargs):
+        """Method defined by child to save the predictor.
+        
+        Method must save into memory the object at self.model
+        
+        Args:
+            filename (str): 
+                name of file to save model to
+        """
+        # save model aka generator and discriminator separately
+        return None
+
+        def _load(self,
+             filename: str, 
+             **kwargs):
+        """Method defined by child to load a predictor into memory.
+        
+        Loads the object to be assigned to self.model.
+        
+        Args:
+            filename (str): 
+                path of file to load
+        """
+        # call Keras.load function
+        return model
+
 
 class cgan(gan):
     '''
@@ -145,7 +191,7 @@ class cgan(gan):
     to as "conditional inputs".
     '''
 
-    def get_conditional_input_shapes(self, **kwargs):
+    def get_conditional_input_shapes(self, **kwargs) -> Array:
         '''
         Returns the shape of the conditional input
         in which the CGAN learns a distribution
@@ -153,7 +199,7 @@ class cgan(gan):
         # adapted from deepchem tutorial 14:
         return [(self.n_classes,)]
 
-    def create_generator(self, **kwargs):
+    def create_generator(self, **kwargs) -> Object:
         '''
         Creates the generator (as a keras model)
         Saves self.generator as this model
@@ -173,7 +219,7 @@ class cgan(gan):
         #             inputs=[noise_in, conditional_in], outputs=[gen_outputs])
         return self.generator
 
-    def create_discriminator(self, **kwargs):
+    def create_discriminator(self, **kwargs) -> Object:
         '''
         Creates the discriminator (as a keras model)
         Saves self.discriminator as this model
