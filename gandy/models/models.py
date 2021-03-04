@@ -6,395 +6,394 @@ losses for training sessions. They wrap predictors methods in order to accompl-
 ish building, training, predicting, and evaluateing.
 
     Typical usage:
-    Not meant to be interacted with directly. Subclasses must define 
+    Not meant to be interacted with directly. Subclasses must define
     `_build`, `_train`, and `_predict` in order to function properly.
 """
-## imports
+# imports
 from typing import Tuple, Iterable, Any, Object, Type
 
 import numpy
 
 import gandy.metrics
 
-## typing
+# typing
 Array = Type[numpy.ndarray]
+
 
 class NotImplimented(Warning):
     """Warning to indicate that a child class has not yet implimented necessary
     methods. """
-    ## pseudocode
-    #. define the exception
+    # pseudocode
+    # . define the exception
     pass
 
 
 class UncertaintyModel:
     """Parent uncertainty model class structure.
-    
+
     Defines the structure for uncertainty models, with method wrappers for eg.
-    training, predicting accessing the predictor itself in `self.model`. The 
+    training, predicting accessing the predictor itself in `self.model`. The
     `build` method, ran in init, creates the predictor according to the user's
     kwargs and allows for the creation of different complex models eg. GAN vs
     BNN to fit the same parent format. The method also impliments data format
     checking.
-    
+
     Class will raise NotImplimented exception on methods not defined as necess-
     ary in children: `_build`, `_train`, `_predict`
-    
+
     Args:
-        xshape (tuple of int): 
+        xshape (tuple of int):
             shape of example data, excluding the first dimension
-        yshape (tuple of int): 
+        yshape (tuple of int):
             shape of target data, excluding the first dimension
         **kwargs:
             keyword arguments to pass to the build method
     """
-    
-    ## to contain dictionary of callable metric classes from the metrics module
-    metrics = {} #gandy.metrics.metric_codex
+
+    # to contain dictionary of callable metric classes from the metrics module
+    metrics = {}  # gandy.metrics.metric_codex
     """Available metrics defined in gandy.metrics"""
-    
-    def __init__(self, 
-                 xshape: Tuple[int], 
-                 yshape: Tuple[int], 
+
+    def __init__(self,
+                 xshape: Tuple[int],
+                 yshape: Tuple[int],
                  **kwargs):
-        ## pseudocode
-        #. set self shapes
-        #. assign self model by running build function
-        #. create empty sessions list   
+        # pseudocode
+        # . set self shapes
+        # . assign self model by running build function
+        # . create empty sessions list
         return
-    
+
     def check(self,
               Xs: Iterable,
-              Ys: Iterable = None, 
+              Ys: Iterable = None,
               **kwargs) -> Tuple[Array]:
         """Attempt to format incoming data.
-        
+
         Assures that a passed set of data has the correct datatypes
         and shapes for the model. Transforms it to numpy if not already.
-        
+
         Args:
             Xs (iterable): examples data to check
             Ys (iterable): label data to check, if present. Default None.
-            
+
         Returns:
             tuple of ndarrays:
                 Xs, the formated X data
                 Ys, the formated Y data if present
         """
-        ## pseudocode
-        #. assert data type has shape attribute
-        #. check shapes of Xs and Ys against self shapes
-        #. raise error if do not match
-        #. convert to numpy
+        # pseudocode
+        # . assert data type has shape attribute
+        # . check shapes of Xs and Ys against self shapes
+        # . raise error if do not match
+        # . convert to numpy
         if Ys:
             return Xs, Ys
         else:
             return Xs
-    
+
     def build(self, **kwargs):
         """Construct and store the predictor.
-        
+
         Build a model according to `_build` and assign to `self.model`
-        
+
         Args:
             **kwargs:
                 keyword arguments to pass to `_build`
         """
-        ## pseudocode
-        #. set self model to _build
+        # pseudocode
+        # . set self model to _build
         return
-    
+
     def _build(self, *args, **kwargs) -> Object:
         """Construct and return the predictor.
-        
+
         Must be implimented in child class. To creates and returns a predictor
         with keyword argument inputs. Raises not implimented warning.
-        
+
         Args:
-            *args: 
+            *args:
                 arguments defined in child
             **kwargs:
                 keyword arguments/hyperparemeters for predictor init.
-            
+
         Raises:
-            NotImplimented: 
+            NotImplimented:
                 warning that child class has not overloaded this method
         Returns:
             None:
                 children will return the predictor
         """
-        ## pseudocode
-        #. raise not implimented 
-        #. model is None
+        # pseudocode
+        # . raise not implimented
+        # . model is None
         return model
-    
+
     def train(self,
               Xs: Iterable,
-              Ys: Iterable, 
-              session: str = None, 
+              Ys: Iterable,
+              session: str = None,
               metric: Union[str, Callable],
               **kwargs):
         """Train the predictor for one session, handled by `_train`.
-        
+
         Trains the stored predictor for a single session according to the
-        protocol in `_train`. Stores any returned quantities eg. losses 
+        protocol in `_train`. Stores any returned quantities eg. losses
         in the `sessions` attribute.
-        
+
         Args:
-            Xs (Iterable): 
+            Xs (Iterable):
                 Examples data.
-            Ys (Iterable): 
-                Label data that is targeted for metrics.  
-            session (str): 
+            Ys (Iterable):
+                Label data that is targeted for metrics.
+            session (str):
                 Name of training session for storing in losses. default None,
                 incriment new name.
             metric (str):
                 Metric to use, a key in UncertaintyModel.metrics or a metric object
                 that takes as input true, predicted, and uncertainty values.
-            **kwargs: 
+            **kwargs:
                 Keyword arguments to pass to `_train` and assign non-default \
                 training parameters.
         """
-        ## pseudocode
-        #. check data inputs with check method - conver to numpy
-        #. get metric method
-        #. execute _train with formated data and metric (?)
-        #. update session losses with session _train losses - maybe create session name
-        return 
-    
+        # pseudocode
+        # . check data inputs with check method - conver to numpy
+        # . get metric method
+        # . execute _train with formated data and metric (?)
+        # . update session losses with session _train losses - maybe create session name
+        return
+
     def _train(self,
                Xs: Array,
                Ys: Array,
                *args,
                **kwargs) -> Any:
         """Train the predictor.
-        
+
         Must be implimented in child class. Trains the stored predictor
         and returns any losses or desired metrics. Up to child to accept metric.
-        
+
         Args:
-            Xs (Array): 
+            Xs (Array):
                 Examples data to train on.
-            Ys (Array): 
-                Label data that is targeted for metrics for training. 
+            Ys (Array):
+                Label data that is targeted for metrics for training.
             *args:
                 Positional arguments to be defined by child.
-            **kwargs: 
-                Keyword arguments to assign non-default training parameters or 
+            **kwargs:
+                Keyword arguments to assign non-default training parameters or
                 pass to nested functions.
-                
+
         Returns:
-            any: 
+            any:
                 Desired tracking of losses during training. Not implimented
                 here, and returns None.
         """
-        ## psudocode
-        #. raise not implimented
-        #. losses is None
+        # psudocode
+        # . raise not implimented
+        # . losses is None
         return losses
-    
+
     def predict(self,
-                Xs: Iterable, 
+                Xs: Iterable,
                 uc_threshold: float = None,
                 **kwargs) -> Tuple[Array]:
         """Make predictions on a set of data and return predictions and uncertain-
-        ty arrays. 
-        
-        For a set of incoming data, check it and make predictions with the stored 
+        ty arrays.
+
+        For a set of incoming data, check it and make predictions with the stored
         model according to `_predict`. Optionally flag predictions whose uncert-
         ainties excede a desired threshhold
-        
+
         Args:
-            Xs (Iterable): 
+            Xs (Iterable):
                 Examples data to make predictions of.
-            uc_threshold (float): acceptible amount of uncertainty. Predictions of 
-                higher ucertainty values will be flagged   
+            uc_threshold (float): acceptible amount of uncertainty. Predictions of
+                higher ucertainty values will be flagged
             **kwargs: keyword arguments to pass to `_predict`
-                
+
         Returns:
             tuple of ndarray:
                 array of predictions of targets with the same length as Xs
-                array of prediction uncertainties of targets withthe same length 
+                array of prediction uncertainties of targets withthe same length
                     as Xs
                 (optional) array of flags of uncertain predictions higher than thr-
                     eshhold of same length as Xs
         """
-        ## pseudocode
-        #. check X data with check function
-        #. run _predict to return predictions and uncertainties
-        #. if threshhold, return predictions, uncertainties, and flags
+        # pseudocode
+        # . check X data with check function
+        # . run _predict to return predictions and uncertainties
+        # . if threshhold, return predictions, uncertainties, and flags
         return predictions, uncertainties, flags
-    
-    def _predict(self, 
-                 Xs: Array, 
-                 *args, 
+
+    def _predict(self,
+                 Xs: Array,
+                 *args,
                  **kwargs):
         """Make predictions on a set of data and return predictions and uncertain-
         ty arrays.
-        
+
         Must be implimented by child class. Makes predictions on data using
         model at self.model and any other stored objects.
-        
+
         Args:
             Xs (ndarray):
                 Example data to make predictions on.
             *args:
                 Positional arguments to be defined by child.
-            **kwargs: 
+            **kwargs:
                 Keyword arguments for predicting.
-                
+
         Returns:
             tuple of ndarray:
                 array of predictions of targets with the same length as Xs
-                array of prediction uncertainties of targets withthe same length 
+                array of prediction uncertainties of targets withthe same length
                     as Xs
         """
-        ## psuedocode
-        #. raise not implimented
-        #. set pred, unc to None
+        # psuedocode
+        # . raise not implimented
+        # . set pred, unc to None
         return predictions, uncertainties
-    
-    def score(self, 
+
+    def score(self,
               Xs: Iterable,
               Ys: Iterable,
-              metric: Union[str, Callable], 
+              metric: Union[str, Callable],
               **kwargs) -> Tuple[float, Array]:
         """Make predictions and score the results according to a defined metric.
-        
+
         For a set of labeled example data, use the the defined `_predict`
         method to make predictions on the data. Then, compare them to the true
         labels according to a desired metric.
-        
+
         Args:
-            Xs (Iterable): 
+            Xs (Iterable):
                 Examples data to make predictions on.
-            Ys (Iterable): 
+            Ys (Iterable):
                 Labels of data.
-            metric (str): 
+            metric (str):
                 Metric to use, a key in UncertaintyModel.metrics or a metric object
                 that takes as input true, predicted, and uncertainty values.
             **kwargs: keyword arguments to pass to `_predict`
-            
+
         Returns:
             float:
                 Total score according to metric.
             ndarray:
                 Score array for each prediction.
         """
-        ## pseudocode
-        #. if statement to get metric object from metrics or specified
-        #. else raise undefined metric
-        #. check data
-        #. predictions, uncertainties = execute self._predict on Xs
-        #. pass predictions, uncertainties to metric get back costs
+        # pseudocode
+        # . if statement to get metric object from metrics or specified
+        # . else raise undefined metric
+        # . check data
+        # . predictions, uncertainties = execute self._predict on Xs
+        # . pass predictions, uncertainties to metric get back costs
         return metric_value, metric_values
-        
-    def save(self, 
-             filename: str, 
+
+    def save(self,
+             filename: str,
              **kwargs):
         """Save the model out of memory to the hard drive by specified format.
-        
-        Save to model to hardrive as two files, "`filename`.json" and 
+
+        Save to model to hardrive as two files, "`filename`.json" and
         "`filename`.XX" where the XX is determined by the predictor type
-        
+
         Args:
-            filename (str): 
+            filename (str):
                 path to save model to, no extension
             **kwargs:
                 keyword arguments to pass to _save, child specified method
         """
-        ## pseudocode
-        #. execute _save with filename
-        #. save json with xshape, yshape, sesssions, etc.
+        # pseudocode
+        # . execute _save with filename
+        # . save json with xshape, yshape, sesssions, etc.
         return
-    
+
     def _save(filename: str,
               **kwargs):
         """Method defined by child to save the predictor.
-        
+
         Method must save into memory the object at self.model
-        
+
         Args:
-            filename (str): 
+            filename (str):
                 name of file to save model to
         """
         ## raise not implimented
         return
-    
+
     @classmethod
-    def load(cls, 
-             filename: str, 
+    def load(cls,
+             filename: str,
              **kwargs):
         """Load a model from hardrive at filename.
-        
-        From two files, "`filename`.json" and "`filename`.XX" where the XX is 
+
+        From two files, "`filename`.json" and "`filename`.XX" where the XX is
         determined by the predictor type, load the model into memory.
-        
+
         Args:
-            filename (str): 
+            filename (str):
                 path of file to load
             **kwargs:
                 keyword arguments to pass to _load
-            
+
         Returns:
             instance of class: the loaded UncertaintyModel
         """
-        ## pseudocode
-        #. load the json and run cls(args)
-        #. predictor = _load
-        #. instance._model = predictor
+        # pseudocode
+        # . load the json and run cls(args)
+        # . predictor = _load
+        # . instance._model = predictor
         return instance
-    
+
     def _load(self,
-             filename: str, 
-             **kwargs):
+              filename: str,
+              **kwargs):
         """Method defined by child to load a predictor into memory.
-        
+
         Loads the object to be assigned to self.model.
-        
+
         Args:
-            filename (str): 
+            filename (str):
                 path of file to load
         """
         ## raise not implimented
-        #. model = None
+        # . model = None
         return model
-    
+
     @property
     def model(self):
         """predictor: the overall predictor model"""
         return self._model
-    
+
     @model.setter
     def model(self, new_model):
-        ## raise exception does not support direct setting, use build function
+        # raise exception does not support direct setting, use build function
         return
-    
+
     @model.deleter
     def model(self):
-        ## print message about deleting model, build needs to be ran
+        # print message about deleting model, build needs to be ran
         return
-    
+
     @property
     def xshape(self):
         """tuple of int: shape of example features"""
         return self._xshape
-    
+
     @xshape.setter
     def xshape(self, new_xshape):
-        ## test new shape, delete model
+        # test new shape, delete model
         self._xshape = new_xshape
         return
-    
+
     @property
     def yshape(self):
         """tuple of int: shape of example label"""
         return self._yshape
-    
+
     @yshape.setter
     def yshape(self, new_yshape):
-        ## test new shape, delete model
+        # test new shape, delete model
         self._yshape = new_yshape
         return
-    
-    
