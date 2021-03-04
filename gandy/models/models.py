@@ -10,11 +10,12 @@ ish building, training, predicting, and evaluateing.
     `_build`, `_train`, and `_predict` in order to function properly.
 """
 ## imports
+import time
 from typing import Tuple, Iterable, Any, Object, Type
 
 import numpy
 
-import gandy.metrics
+import gandy.quality_est.metrics
 
 ## typing
 Array = Type[numpy.ndarray]
@@ -47,10 +48,16 @@ class UncertaintyModel:
             shape of target data, excluding the first dimension
         **kwargs:
             keyword arguments to pass to the build method
+            
+    Attributes:
+        sessions (list of tuple): 
+            Stored losses from training sessions. When train is called, a new
+            tuple is appended of (session name, losses) where losses is 
+            determined by the output of _train.
     """
     
     ## to contain dictionary of callable metric classes from the metrics module
-    metrics = {} #gandy.metrics.metric_codex
+    metrics = gandy.quality_est.metrics
     """Available metrics defined in gandy.metrics"""
     
     def __init__(self, 
@@ -132,7 +139,7 @@ class UncertaintyModel:
               Xs: Iterable,
               Ys: Iterable, 
               session: str = None, 
-              metric: Union[str, Callable],
+              metric: Union[str, Callable] = None,
               **kwargs):
         """Train the predictor for one session, handled by `_train`.
         
@@ -147,7 +154,7 @@ class UncertaintyModel:
                 Label data that is targeted for metrics.  
             session (str): 
                 Name of training session for storing in losses. default None,
-                incriment new name.
+                use clock time.
             metric (str):
                 Metric to use, a key in UncertaintyModel.metrics or a metric object
                 that takes as input true, predicted, and uncertainty values.
@@ -165,6 +172,7 @@ class UncertaintyModel:
     def _train(self,
                Xs: Array,
                Ys: Array,
+               metric: Callable = None
                *args,
                **kwargs) -> Any:
         """Train the predictor.
@@ -177,6 +185,9 @@ class UncertaintyModel:
                 Examples data to train on.
             Ys (Array): 
                 Label data that is targeted for metrics for training. 
+            metric (callable):
+                Metric to use, takes true, predicted, uncertainties to
+                compute a score.
             *args:
                 Positional arguments to be defined by child.
             **kwargs: 
@@ -254,6 +265,16 @@ class UncertaintyModel:
         #. set pred, unc to None
         return predictions, uncertainties
     
+    def _get_metric(self, metric_in: Union[None, Callable, str]):
+        """Accesses gandy metrics to retrieve the correct metric depending on
+        input
+        
+        Args:
+            metric_in (str, callable, None):
+                metric name to get or callable to use"""
+        ## if statement, None, string, callable
+        return metric_out
+    
     def score(self, 
               Xs: Iterable,
               Ys: Iterable,
@@ -282,13 +303,12 @@ class UncertaintyModel:
                 Score array for each prediction.
         """
         ## pseudocode
-        #. if statement to get metric object from metrics or specified
-        #. else raise undefined metric
-        #. check data
-        #. predictions, uncertainties = execute self._predict on Xs
+        #. get metric
+        #. check
+        #. predictions, uncertainties = execute self.predict on Xs
         #. pass predictions, uncertainties to metric get back costs
         return metric_value, metric_values
-        
+    
     def save(self, 
              filename: str, 
              **kwargs):
