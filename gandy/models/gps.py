@@ -32,7 +32,7 @@ Array = Type[numpy.ndarray]
 Predictor = Type[sklearn.gaussian_process]
 
 ## The gaussian process uncertainty model
-class ucGaussianProcess(gandy.models.models.UncertaintyModel):
+class (gandy.models.models.UncertaintyModel):
     """Gaussian Process Regressor/Classifier Uncertainty Model
     
     Utilizes sklearn's GP objects as an Uncertainty Model, able to make predic-

@@ -1,6 +1,7 @@
 """Testing functions for UncertaintyModel parent class"""
 import numpy
 import unittest
+import unittest.mock
 
 import gandy.models.models as mds
 
@@ -95,7 +96,7 @@ class TestUncertaintyModel(unittest.TestCase):
         """Test the parent build method, to make sure it executes protected 
         method"""
         model = 'Mymodel'
-        with mock.patch(
+        with unittest.mock.patch(
             'gandy.models.models.UncertaintyModel._build',
             return_value=model # mock the return of the model to a string
         ) as mocked__build:
@@ -114,7 +115,7 @@ class TestUncertaintyModel(unittest.TestCase):
     
     def test__get_metric(self):
         """test ability to retrieve the correct callables"""
-        with mock.patch('gandy.quality_est.metrics') as mocked_metrics:
+        with unittest.mock.patch('gandy.quality_est.metrics') as mocked_metrics:
             def fake_metric(trues, predictions, uncertainties):
                 return 5
             mocked_metrics.fake_metric = fake_metric
@@ -150,7 +151,7 @@ class TestUncertaintyModel(unittest.TestCase):
             return_value = 'some_metric'
         )
         # run the train and check proper calls
-        with mock.patch('time.clock', return_value='thetime') as mocked_time:
+        with unittest.mock.patch('time.clock', return_value='thetime') as mocked_time:
             # first specify a session name
             subject.train(Xs_in, Ys_in, 
                           metric='fake_metric', 
@@ -293,6 +294,7 @@ class TestUncertaintyModel(unittest.TestCase):
         subject.yshape = (5,)
         self.assertEqual(subject.model, None)
         return
+    
     def test_property_model(self):
         """ensure safety of the model attribute"""
         subject = mds.UncertaintyModel((1,), (1,))
