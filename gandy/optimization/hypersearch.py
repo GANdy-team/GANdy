@@ -103,7 +103,7 @@ class SubjectObjective:
                  subject: Model,
                  Xs: Array,
                  Ys: Array,
-                 param_space: dict,
+                 param_space: list,
                  sessions: Union[int, List[str]] = None,
                  k: Union[int, tuple] = None,
                  val_data: Tuple[Array] = None,
@@ -132,7 +132,7 @@ class SubjectObjective:
                 Mapping of hyperparameter values to use for this trial
         """
         ## pseudocode
-        #. hyparams = dict loop self.search_space trial.method(args)
+        #. hyparams = dict loop self.param_space trial.method(args)
         return hyparams
     
     def _execute_instance(self, 
@@ -179,6 +179,57 @@ class SubjectObjective:
         #.    check for prune
         return loss
     
+    @property
+    def k(self):
+        """list of fold indicies for incoming data, (train ind, val ind)"""
+        return self._k
+    
+    @k.setter
+    def k(self, new_k):
+        # if int convert to indexes
+        # otherwise check proper form
+        self._k = new_k
+        return
+    
+    @k.deleter
+    def k(self):
+        self._k = None
+        # print message
+        return
+    
+    @property
+    def val_data(self):
+        """tuple of ndarray, (train data, test data)"""
+        return self._val_data
+    
+    @val_data.setter
+    def val_data(self, new_val_data):
+        # check tuple of array
+        self._val_data = new_val_data
+        return
+    
+    @val_data.deleter
+    def val_data(self):
+        self._val_data = None
+        # print message
+        return
+    
+    @property
+    def val_frac(self):
+        """fraction of incoming data to use as validation data, 
+        randomly sample"""
+        return self._val_frac
+    
+    @val_frac.setter
+    def val_frac(self, new_val_frac):
+        # check float
+        self._val_frac = new_val_frac
+        return
+    
+    @val_frac.deleter
+    def val_frac(self):
+        self._val_frac = None
+        return
 
 ## Hyperparameter search class wrapper for our models and optuna
 class OptRoutine:
