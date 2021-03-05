@@ -10,7 +10,7 @@ the user may input uncertainties if a given model outputs them. The
 properties of the parent class are then inhereted by individual children
 classes which define the exact mathematical operations to compute a specific
 metric. Calling a specific metric child class will compute a given metric and
-return the total value and/or invidual values of that metric based on the
+return the total value and/or individual values of that metric based on the
 input data provided.
 '''
 
