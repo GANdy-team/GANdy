@@ -7,7 +7,6 @@ https://github.com/deepchem/deepchem/blob/master/examples/tutorials/
 
 # gandy imports
 import gandy.models.models
-import gandy.metrics
 
 # deep learning imports
 import deepchem
