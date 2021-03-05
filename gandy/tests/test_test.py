@@ -1,3 +1,4 @@
+import unittest
 class TestDumbFunction(unittest.TestCase):
 
     def test_dumb(self):
