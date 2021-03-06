@@ -28,7 +28,7 @@ incorporates the studied subject and the chosen hyperparameters search spaces
 """
 
 # imports
-from typing import Tuple, Iterable, Any, Object, Type, List
+from typing import Tuple, Iterable, Type, List, Union
 
 import optuna
 import numpy
@@ -59,7 +59,8 @@ class SearchableSpace:
             Function to be used for sampling of hyperparams.
         hypname (str):
             Name of hyperparameter.
-        args (tuple): Positional arguments after name to be passed to func for sampling
+        args (tuple): Positional arguments after name to be passed to func for
+            sampling
     """
 
     def __init__(self, hypname, space):
@@ -111,8 +112,8 @@ class SubjectObjective:
                  sessions: Union[int, List[str]] = None,
                  k: Union[int, tuple] = None,
                  val_data: Tuple[Array] = None,
-                 val_frac: float = None
-                 ** kwargs):
+                 val_frac: float = None,
+                 **kwargs):
         # pseudocode
         # . make sure no overlap of kwargs and param space
         # . store kwargs
@@ -124,8 +125,8 @@ class SubjectObjective:
     def _sample_params(self, trial: Trial) -> dict:
         """Sample the hyperparameters to be used for this trial.
 
-        Uses space defined at self.param_space (dict of SearchableSpace instances)
-        to return values for this trial.
+        Uses space defined at self.param_space (dict of SearchableSpace
+        instances) to return values for this trial.
 
         Args:
             trial (optuna Trial):
@@ -137,6 +138,7 @@ class SubjectObjective:
         """
         # pseudocode
         # . hyparams = dict loop self.search_space trial.method(args)
+        hyparams = None
         return hyparams
 
     def _execute_instance(self,
@@ -161,6 +163,7 @@ class SubjectObjective:
         # . construct model with hyparms and self kwargs
         # . train model with hyparms and self kwargs
         # . score model with self kwargs
+        single_loss = None
         return single_loss
 
     def __call__(self, trial: Trial) -> float:
@@ -181,6 +184,7 @@ class SubjectObjective:
         # .    split data based on above
         # .    for each session, execute instances
         # .    check for prune
+        loss = None
         return loss
 
 
@@ -300,13 +304,15 @@ class OptRoutine:
         # . set optimizer, study with all kwargs
         # . set self.best_params
         # . get best_score
+        best_score = None
         return best_score
 
     def train_best(self, **kwargs) -> Model:
-        """Train the subject on the entire dataset with the best found parameters.
+        """Train the subject on the entire dataset with the best found
+        parameters.
 
-        Requires self.optimize to have been executed or best_params to have been
-        specified.
+        Requires self.optimize to have been executed or best_params to have
+        been specified.
 
         Args:
             **kwargs:
@@ -323,6 +329,7 @@ class OptRoutine:
         # . Initiate model with  and best_params and kwargs
         # . train model with best_params training and kwargs
         # . set self.best_model
+        best_model = None
         return best_model
 
     @property
