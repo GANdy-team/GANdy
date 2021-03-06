@@ -274,8 +274,6 @@ class OptRoutine:
         if specified.
         """
         ## pseudocode
-        #. check self.search_space input
-        #     raise if None
         #. create empty param_space
         #. for loop self.param_space
         #     param_space = SearchableSpace class
