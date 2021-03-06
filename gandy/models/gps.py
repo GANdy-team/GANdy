@@ -19,7 +19,7 @@ ctions of target values and uncertainties.
     score = cfr.evaluate(Xs, Ys, metric='mse')
 """
 # imports
-from typing import Type, Tuple, Union
+from typing import Type, Tuple, Object
 
 import sklearn.gaussian_process
 import numpy
@@ -27,7 +27,7 @@ import numpy
 import gandy.models.models
 
 # Typing
-Model = Type[ucGaussianProcess]
+Model = Type[Object]
 Array = Type[numpy.ndarray]
 Predictor = Type[sklearn.gaussian_process]
 
@@ -74,6 +74,7 @@ class ucGaussianProcess(gandy.models.models.UncertaintyModel):
         #    instatiate scikitlearn object with kwargs
         # . else
         #    raise not implimented error
+        model = None
         return model
 
     def _train(self,
@@ -119,12 +120,14 @@ class ucGaussianProcess(gandy.models.models.UncertaintyModel):
         Returns:
             tuple of ndarray:
                 array of predictions of targets with the same length as Xs
-                array of prediction uncertainties of targets withthe same length
-                    as Xs
+                array of prediction uncertainties of targets withthe same
+                length as Xs
         """
         # pseudocode
         # . get uncertainties and predictions by passing return_std to
         #     sklearn object's predict
+        predictions = None
+        uncertainties = None
         return predictions, uncertainties
 
     @classmethod

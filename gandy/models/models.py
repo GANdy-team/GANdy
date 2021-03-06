@@ -10,11 +10,11 @@ ish building, training, predicting, and evaluateing.
     `_build`, `_train`, and `_predict` in order to function properly.
 """
 # imports
-from typing import Tuple, Iterable, Any, Object, Type
+from typing import Tuple, Iterable, Any, Type, Callable, Union
 
 import numpy
 
-import gandy.metrics
+# import gandy.metrics
 
 # typing
 Array = Type[numpy.ndarray]
@@ -105,7 +105,7 @@ class UncertaintyModel:
         # . set self model to _build
         return
 
-    def _build(self, *args, **kwargs) -> Object:
+    def _build(self, *args, **kwargs) -> Callable:
         """Construct and return the predictor.
 
         Must be implimented in child class. To creates and returns a predictor
@@ -126,14 +126,14 @@ class UncertaintyModel:
         """
         # pseudocode
         # . raise not implimented
-        # . model is None
+        model = None
         return model
 
     def train(self,
               Xs: Iterable,
               Ys: Iterable,
-              session: str = None,
               metric: Union[str, Callable],
+              session: str = None,
               **kwargs):
         """Train the predictor for one session, handled by `_train`.
 
@@ -150,8 +150,9 @@ class UncertaintyModel:
                 Name of training session for storing in losses. default None,
                 incriment new name.
             metric (str):
-                Metric to use, a key in UncertaintyModel.metrics or a metric object
-                that takes as input true, predicted, and uncertainty values.
+                Metric to use, a key in UncertaintyModel.metrics or a metric
+                objectthat takes as input true, predicted, and uncertainty
+                values.
             **kwargs:
                 Keyword arguments to pass to `_train` and assign non-default \
                 training parameters.
@@ -160,7 +161,7 @@ class UncertaintyModel:
         # . check data inputs with check method - conver to numpy
         # . get metric method
         # . execute _train with formated data and metric (?)
-        # . update session losses with session _train losses - maybe create session name
+        # . update session losses with session _train losses
         return
 
     def _train(self,
@@ -171,7 +172,8 @@ class UncertaintyModel:
         """Train the predictor.
 
         Must be implimented in child class. Trains the stored predictor
-        and returns any losses or desired metrics. Up to child to accept metric.
+        and returns any losses or desired metrics. Up to child to accept
+        metric.
 
         Args:
             Xs (Array):
@@ -191,39 +193,40 @@ class UncertaintyModel:
         """
         # psudocode
         # . raise not implimented
-        # . losses is None
+        losses = None
         return losses
 
     def predict(self,
                 Xs: Iterable,
                 uc_threshold: float = None,
                 **kwargs) -> Tuple[Array]:
-        """Make predictions on a set of data and return predictions and uncertain-
-        ty arrays.
+        """Make predictions on a set of data and return predictions and
+        uncertainty arrays.
 
-        For a set of incoming data, check it and make predictions with the stored
-        model according to `_predict`. Optionally flag predictions whose uncert-
-        ainties excede a desired threshhold
+        For a set of incoming data, check it and make predictions with the
+        stored model according to `_predict`. Optionally flag predictions whose
+        uncertainties excede a desired threshhold.
 
         Args:
             Xs (Iterable):
                 Examples data to make predictions of.
-            uc_threshold (float): acceptible amount of uncertainty. Predictions of
-                higher ucertainty values will be flagged
+            uc_threshold (float): acceptible amount of uncertainty.
+                Predictions of higher ucertainty values will be flagged
             **kwargs: keyword arguments to pass to `_predict`
 
         Returns:
             tuple of ndarray:
                 array of predictions of targets with the same length as Xs
-                array of prediction uncertainties of targets withthe same length
-                    as Xs
-                (optional) array of flags of uncertain predictions higher than thr-
-                    eshhold of same length as Xs
+                array of prediction uncertainties of targets withthe same
+                    length as Xs
+                (optional) array of flags of uncertain predictions higher
+                    than threshhold of same length as Xs
         """
         # pseudocode
         # . check X data with check function
         # . run _predict to return predictions and uncertainties
         # . if threshhold, return predictions, uncertainties, and flags
+        predictions, uncertainties, flags = None, None, None
         return predictions, uncertainties, flags
 
     def _predict(self,
@@ -247,12 +250,13 @@ class UncertaintyModel:
         Returns:
             tuple of ndarray:
                 array of predictions of targets with the same length as Xs
-                array of prediction uncertainties of targets withthe same length
-                    as Xs
+                array of prediction uncertainties of targets withthe same
+                    length as Xs
         """
         # psuedocode
         # . raise not implimented
         # . set pred, unc to None
+        predictions, uncertainties = None, None
         return predictions, uncertainties
 
     def score(self,
@@ -272,8 +276,9 @@ class UncertaintyModel:
             Ys (Iterable):
                 Labels of data.
             metric (str):
-                Metric to use, a key in UncertaintyModel.metrics or a metric object
-                that takes as input true, predicted, and uncertainty values.
+                Metric to use, a key in UncertaintyModel.metrics or a metric
+                object that takes as input true, predicted, and uncertainty
+                values.
             **kwargs: keyword arguments to pass to `_predict`
 
         Returns:
@@ -288,6 +293,7 @@ class UncertaintyModel:
         # . check data
         # . predictions, uncertainties = execute self._predict on Xs
         # . pass predictions, uncertainties to metric get back costs
+        metric_value, metric_values = None, None
         return metric_value, metric_values
 
     def save(self,
@@ -319,7 +325,7 @@ class UncertaintyModel:
             filename (str):
                 name of file to save model to
         """
-        ## raise not implimented
+        # raise not implimented
         return
 
     @classmethod
@@ -344,6 +350,7 @@ class UncertaintyModel:
         # . load the json and run cls(args)
         # . predictor = _load
         # . instance._model = predictor
+        instance = None
         return instance
 
     def _load(self,
@@ -357,8 +364,8 @@ class UncertaintyModel:
             filename (str):
                 path of file to load
         """
-        ## raise not implimented
-        # . model = None
+        # raise not implimented
+        model = None
         return model
 
     @property
