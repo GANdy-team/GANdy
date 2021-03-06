@@ -276,7 +276,7 @@ class OptRoutine:
         # . save all_kwargs
         return
 
-    def _set_param_space(self, **kwargs):
+    def _set_param_space(self):
         """Define the search space from user input search space according to
         gandy.models.hypersearch.SearchableSpace class.
 
@@ -290,7 +290,7 @@ class OptRoutine:
         # set self._param_space
         return
 
-    def _set_objective(self, **kwargs):
+    def _set_objective(self):
         """Define the objective function for optuna to target when optimizing
         hyperparameters.
 
@@ -316,7 +316,7 @@ class OptRoutine:
         # . set self.objective
         return
 
-    def _set_study(self, **kwargs):
+    def _set_study(self):
         """Define the optuna study with create_study.
 
         Not meant to be interacted with directly. Creates the study to be used
@@ -381,15 +381,3 @@ class OptRoutine:
         # . set self.best_model
         best_model = None
         return best_model
-
-    @property
-    def search_space(self):
-        """dict: hyperparameter name to search space parirings"""
-        return self._search_space
-
-    @search_space.setter
-    def search_space(self, new_search_space):
-        # pseudocode
-        # . check dict
-        self._search_space = new_search_space
-        return
