@@ -35,47 +35,63 @@ def TestGAN(unittest.test_case):
         '''
         return
 
-    def test_build(self):
+    def test__build(self):
         '''
         Test build function.
 
         The build function should create a generator and discriminator.
-        This check both functions are called. It also checks that both
+        This checks both functions are called. It also checks that both
         generator and discriminator are attributes with type == Keras model.
         '''
         # create gan instance
-        subject = gans.gan(xshape=(6,), yshape=(3,))
+        subject = gans.gan(xshape=(4,), yshape=(2,))
         # create mock functions
-        gan.create_generator = mock.MagicMock(name='create_generator')
-        gan.create_discriminator = mock.MagicMock(name='create_discriminator')
+        subject.create_generator = mock.MagicMock(name='create_generator')
+        subject.create_discriminator = mock.MagicMock(name='create_discriminator')
         kwargs = dict(option=x1)
-        gan.build(kwargs)
+        subject.build(kwargs)
         # assert create generator function called
-        gan.create_generator.assert_called_once_with(kwargs)
+        subject.create_generator.assert_called_once_with(kwargs)
         # assert create discriminator function called
-        gan.create_discriminator.assert_called_once_with(kwargs)
+        subject.create_discriminator.assert_called_once_with(kwargs)
         # check attributes
         self.assertTrue(hasattr(subject, 'n_classes'))
         self.assertTrue(hasattr(subject, 'generator'))
         self.assertTrue(hasattr(subject, 'discriminator'))
         return
 
-    def test_train(self):
+    def test__train(self):
         '''
         Test train function.
 
-        The train function calls the fit function.
+        The train function calls the fit function for the generator and the
+        predict function for the discriminator.
         This checks that there is a Keras callback History object returned.
         '''
+        Xs = 'Xs'
+        Ys = 'Ys'
+        subject = gans.gan(xshape=(4,), yshape=(2,))
+        kwargs = dict(option=x1)
+        subject._train(Xs, Ys, kwargs)
+        # assert generator model called fit and discriminator called predict
+        subject.generator.fit.assert_called_with(Xs, Ys, kwargs)
+        subject.discriminator.predict.assert_called_with(Xs, Ys, kwargs)
         return
 
-    def test_predict(self):
+    def test__predict(self):
         '''
         Test predict function.
 
         The predict function returns predictions and uncertainties.
         This checks predictions and uncertainties are the appropriate shape.
         '''
+        Xs = 'Xs'
+        subject = gans.gan(xshape=(4,), yshape=(2,))
+        subject._predict.return_value = ('preds', 'ucs')
+        preds, ucs = subject._predict(Xs)
+        subject._predict.assert_called_with(Xs)
+        self.assertEqual('preds', preds)
+        self.assertEqual('ucs', ucs)
         return
 
     def test__save(self):
