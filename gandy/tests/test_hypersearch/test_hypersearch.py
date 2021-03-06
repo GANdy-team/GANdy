@@ -329,5 +329,55 @@ class TestOptRoutine(unittest.TestCase):
                                      search_space={'hyp1': (1,10),
                                                    'hyp2': ['a', 'b']},
                                      keyword=5)
-        
+        # expected success
+        subject = opt.OptRoutine(subject = gandy.models.models.\
+                                 UncertaintyModel,
+                                 Xs=numpy.array([1,2,3]),
+                                 Ys=numpy.array([1,2,3]),
+                                 search_space = {'hyp1': (1,10),
+                                                 'hyp2': ['a', 'b']},
+                                 keyword=5)
+        self.assertTrue(subject.Xs is not None)
+        self.assertTrue(subject.Ys is not None)
+        self.assertTrue(self.subject == gandy.models.models.UncertaintyModel)
+        self.assertEqual(subject.search_space, {'hyp1': (1,10),
+                                                'hyp2': ['a', 'b']})
+        self.assertTrue('keyword' in subject.all_kwargs.keys())
+        return
+    
+    @unittest.mock.patch('gandy.optimization.hypersearch.SearchableSpace')
+    def test__set_param_space(self, mocked_SS):
+        """proper parsing of dictionary into SearchableSpace objects"""
+        mocked_SS.side_effect = ['ss1', 'ss2']
+        subject = opt.OptRoutine(subject = gandy.models.models.\
+                                 UncertaintyModel,
+                                 Xs=numpy.array([1,2,3]),
+                                 Ys=numpy.array([1,2,3]),
+                                 search_space = {'hyp1': (1,10),
+                                                 'hyp2': ['a', 'b']},
+                                 keyword=5)
+        mocked_SS.assert_called_with('hyp2', ['a', 'b'])
+        self.assertEqual(mocked_SS.call_count, 2)
+        return
+    
+    @unittest.mock.patch('gandy.optimization.hypersearch.SubjectObjective')
+    def test__set_objective(self, mocked_objective):
+        """ensure proper calling of SubjectObjective class"""
+        mocked_objective.return_value = 'objective'
+        subject = opt.OptRoutine(subject = gandy.models.models.\
+                                 UncertaintyModel,
+                                 Xs=numpy.array([1,2,3]),
+                                 Ys=numpy.array([1,2,3]),
+                                 search_space = {'hyp1': (1,10),
+                                                 'hyp2': ['a', 'b']},
+                                 keyword=5)
+        mocked__set_param = unittest.mock.MagicMock()
+        subject._set_param_space = mocked__set_param
+        # set the objective
+        subject._set_objective()
+        mocked_objective.assert_called_with(subject.subject,
+                                            subject.Xs,
+                                            subject.Ys,
+                                            **subject.all_kwargs)
+        self.assertEqual(subject.objective, 'objective')
         
