@@ -166,6 +166,8 @@ class gan(deepchem.models.GAN, gandy.models.models.UncertaintyModel):
                 name of file to save model to
         """
         # save model aka generator and discriminator separately
+        # assert filename.endswith('.h5') or other extension
+        # self.generator.save(filename)
         return None
 
     def _load(self, filename: str, **kwargs):
@@ -178,6 +180,8 @@ class gan(deepchem.models.GAN, gandy.models.models.UncertaintyModel):
                 path of file to load
         """
         # call Keras.load function
+        # two filenames, one for gen and one for discrim?
+        # model = tf.keras.model.load_model(filename, compile=False)
         return model
 
 
