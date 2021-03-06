@@ -11,12 +11,13 @@ import gandy.metrics
 
 # deep learning imports
 import deepchem
-import tensorflow as tf
+# import tensorflow as tf
 
 # typing imports
-from typing import Tuple, Iterable, Any, Object, Type
+from typing import Tuple, Any, Object, Type
 
 # typing
+import numpy
 Array = Type[numpy.ndarray]
 
 
@@ -88,7 +89,7 @@ class gan(deepchem.models.GAN, gandy.models.models.UncertaintyModel):
         '''
         Returns the shape of the noise vector
         '''
-        return noise.shape
+        return  # noise.shape
 
     def get_data_input_shapes(self, **kwargs) -> Tuple[int]:
         '''
@@ -124,7 +125,7 @@ class gan(deepchem.models.GAN, gandy.models.models.UncertaintyModel):
             **kwargs - keyword arguments to assign non-default training parame-
                 ters or pass to nested functions.
         '''
-
+        losses = None
         return losses
 
     # overridden method from UncertaintyModel class
@@ -154,6 +155,7 @@ class gan(deepchem.models.GAN, gandy.models.models.UncertaintyModel):
         # generated_points = gan.predict_gan_generator(
         #                                 conditional_inputs=[one_hot_Ys])
         # the above code generates points, but we need uncertainties as well
+        predictions, uncertainties = None, None
         return predictions, uncertainties
 
     def _save(filename: str, **kwargs):
@@ -166,6 +168,8 @@ class gan(deepchem.models.GAN, gandy.models.models.UncertaintyModel):
                 name of file to save model to
         """
         # save model aka generator and discriminator separately
+        # assert filename.endswith('.h5') or other extension
+        # self.generator.save(filename)
         return None
 
     def _load(self, filename: str, **kwargs):
@@ -178,6 +182,9 @@ class gan(deepchem.models.GAN, gandy.models.models.UncertaintyModel):
                 path of file to load
         """
         # call Keras.load function
+        # two filenames, one for gen and one for discrim?
+        # model = tf.keras.model.load_model(filename, compile=False)
+        model = None
         return model
 
 
