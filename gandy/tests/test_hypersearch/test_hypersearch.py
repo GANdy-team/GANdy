@@ -276,3 +276,58 @@ class TestSubjectObjective(unittest.TestCase):
             )
             self.assertTrue(mocked_execute.call_count == 1)
             trial.should_prune.assert_called()
+        # reset calls
+        mocked_execute.reset_mock()
+        mocked_sample.reset_mock()
+        trial.reset_mock()
+        subject._val_frac = None
+            
+        # None specified
+        with unittest.mock.patch('sklearn.model_selection.train_test_split',
+                                 return_value = 'Xt', 'Xv', 'Yt', 'Yv') as
+                                 mocked_tts:
+            subject.__call__(trial)
+            mocked_sample.assert_called_with(trial)
+            mocked_tts.assert_called_with(subject.Xs, subject.Ys, 
+                                          test_size=0.8)
+            mocked_execute.assert_called_with(
+                {'hp1': 1, 'hp2': 2}, 
+                ('Xt', 'Yt'), 
+                ('Xv', 'Yv')
+            )
+            self.assertTrue(mocked_execute.call_count == 1)
+            trial.should_prune.assert_called()
+        return
+    
+class TestOptRoutine(unittest.TestCase):
+    """User interface class"""
+    
+    def test___init__(self):
+        """proper saving of keyword arguments and data saving"""
+        # failure case not correct model type
+        with self.assertRaises(TypeError):
+            subject = opt.OptRoutine(subject=opt.SearchableSpace,
+                                     Xs=numpy.array([1,2,3]),
+                                     Ys=numpy.array([1,2,3]),
+                                     search_space={'hyp1': (1,10),
+                                                     'hyp2': ['a', 'b']},
+                                     keyword=5)
+        # failure case data not iterable
+        with self.assertRaises(TypeError):
+            subject = opt.OptRoutine(subject = gandy.models.models.\
+                                     UncertaintyModel,
+                                     Xs='str',
+                                     Ys=numpy.array([1,2,3]),
+                                     search_space = {'hyp1': (1,10),
+                                                     'hyp2': ['a', 'b']},
+                                     keyword=5)
+        with self.assertRaises(TypeError):
+            subject = opt.OptRoutine(subject=gandy.models.models.\
+                                     UncertaintyModel,
+                                     Xs=numpy.array([1,2,3]),
+                                     Ys='str',
+                                     search_space={'hyp1': (1,10),
+                                                   'hyp2': ['a', 'b']},
+                                     keyword=5)
+        
+        
