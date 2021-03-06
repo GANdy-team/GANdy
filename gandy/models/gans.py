@@ -11,7 +11,7 @@ import gandy.metrics
 
 # deep learning imports
 import deepchem
-import tensorflow as tf
+# import tensorflow as tf
 
 # typing imports
 from typing import Tuple, Any, Object, Type
@@ -89,7 +89,7 @@ class gan(deepchem.models.GAN, gandy.models.models.UncertaintyModel):
         '''
         Returns the shape of the noise vector
         '''
-        return # noise.shape
+        return  # noise.shape
 
     def get_data_input_shapes(self, **kwargs) -> Tuple[int]:
         '''
