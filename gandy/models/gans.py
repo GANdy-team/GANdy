@@ -14,6 +14,7 @@ import gandy.models.models
 import gandy.metrics
 
 # deep learning imports
+import deepchem
 import gandy.models.dcgan as dcgan
 # import tensorflow as tf
 
@@ -38,10 +39,10 @@ class GAN(gandy.models.models.UncertaintyModel):
     are trained together. The discriminator tries to get better and better
     at telling real from false data, while the generator tries to get better
     and better at fooling the discriminator.
+
     Thank you to deepchem at
     https://github.com/deepchem/deepchem/blob/master/deepchem/models/gan.py#L14-L442
     for the information about GANS.
-    This class builds off of the deepchem GAN class.
     """
 
     # overridden method from UncertaintyModel class
@@ -50,32 +51,50 @@ class GAN(gandy.models.models.UncertaintyModel):
         Construct the model.
 
         This instantiates the deepchem gan as the model.
+
+        Arguments:
+            **kwargs - key word arguments for creating the generator
+                and discriminator. See dcgan.create_generator and
+                dcgan.create_discriminator for those kwargs.
+                type == dict
+
+        Returns:
+            model - Deepchem GAN model found in dcgan
+                type == Object
         """
         # setting the dcgan global variables
         dcgan.XSHAPE = self.xshape
         dcgan.YSHAPE = self.yshape
         # get noise shape from kwargs
-        # default noise is (10,)
+        # default is 10 dimensional
         dcgan.NOISE_SHAPE = kwargs.get('noise_shape', (10,))
-        # determine whether to use gan or condition gan
-        if len(yshape) == 3:
-            conditional = True
+        # get n_classes from kwargs
+        # default is the y dimension
+        # e.g., regression would be == 1
+        # This would also be correct for a one hot encoded y vector.
+        dcgan.N_CLASSES = kwargs.get('n_classes', self.yshape[0])
+
+        # determine whether to use gan or conditional gan
+        if len(self.yshape) == 3:
+            self.conditional = True
         else:
-            conditional = False
+            self.conditional = False
+
         # instantiating the model as the deepchem gan
-        if conditional:
+        if self.conditional:
             model = dcgan.CondDCGAN(**kwargs)
         else:
             model = dcgan.DCGAN(**kwargs)
         return model
 
-    def generate_data(Xs: Array,
-                        Ys: Array,
-                        batch_size: int):
+    def generate_data(self,
+                      Xs: Array,
+                      Ys: Array,
+                      batch_size: int):
         """
         Generating function.
 
-        Creates a batch of bootstrapped data. _train helper function
+        Create a batch of bootstrapped data. _train helper function
 
         Arguments:
             Xs/Ys - training examples/targets
@@ -91,13 +110,17 @@ class GAN(gandy.models.models.UncertaintyModel):
             points - array of data points sampled from Xs
                 type == ndarray
         """
-        # sample with replacement a batch size num of x, y pairs
-        classes, points = None
+        # sample with replacement X, Y pairs of size batch_size
+        n = len(Xs)
+        indices = np.random.randomint(0, high=n, size=(batch_size,))
+        classes = Xs[indices]
+        points = Ys[indices]
         return classes, points
 
-    def iterate_batches(Xs: Array,
+    def iterate_batches(self,
+                        Xs: Array,
                         Ys: Array,
-                        epcohs: int):
+                        **kwargs):
         """
         Function that creates batches of generated data.
 
@@ -108,20 +131,29 @@ class GAN(gandy.models.models.UncertaintyModel):
             Xs/Ys - training examples/targets
                 type == ndarray
 
-            batch_size - number of data points in a batch
-                type == int
+            **kwargs - Specify training hyperparameters
+                    batches - number of batches to train on
+                        type == int
+                    batch_size - number of data points in a batch
+                        type == int
+
 
         Yields:
             batched_data - data split into batches
                 type == dict
         """
-        # for i in range(batches):
-        #     classes, points = generate_data(self.batch_size)
-        #     classes = deepchem.metrics.to_one_hot(classes, n_classes)
-        #     batched_data = {self.data_inputs[0]: points,
-        #                     self.conditional_inputs[0]: classes}
-        #     yield batched_data
+        # get training hyperparamters from kwargs
+        batches = kwargs.get('batches', 50)
+        batch_size = kwargs.get('batch_size', 32)
 
+        # training loop
+        for i in range(batches):
+            classes, points = self.generate_data(Xs, Ys, batch_size)
+            classes = deepchem.metrics.to_one_hot(classes,
+                                                  self.model.N_CLASSES)
+            batched_data = {self.data_inputs[0]: points,
+                            self.conditional_inputs[0]: classes}
+            yield batched_data
 
     # overridden method from UncertaintyModel class
     def _train(self,
@@ -138,12 +170,20 @@ class GAN(gandy.models.models.UncertaintyModel):
 
             **kwargs - keyword arguments to assign non-default training parame-
                 ters or pass to nested functions.
+
+        Returns:
+            losses - array of loss for each epoch
+                type == ndarray
         """
-        # epochs and batch_size in args
-        # self.batch_size = batch_size
-        # self.fit_gan(iterbatches(Xs, Ys, epochs))
-        # losses = self.model.outputs
-        losses = None
+        # train GAN on data
+        # self.model = deepchem GAN instance
+        self.model.fit_gan(self.iterbatches(Xs, Ys, **kwargs))
+        # The deepchem gan is a Keras model whose
+        # outputs are [gen_loss, disrcim_loss].
+        # Thus the final losses for the generator
+        # and discriminator are self.model.outputs
+        # This is a list of 2 KerasTensors so must evaluate it.
+        losses = self.model.outputs
         return losses
 
     # overridden method from UncertaintyModel class
@@ -152,6 +192,8 @@ class GAN(gandy.models.models.UncertaintyModel):
                  *args,
                  **kwargs):
         """
+        Predict on Xs.
+
         Arguments:
             Xs - example data to make predictions on
                 type == ndarray
@@ -167,22 +209,25 @@ class GAN(gandy.models.models.UncertaintyModel):
                 the same length as Xs
                 type == ndarray
         """
-        # pseudocode
         # adapted from deepchem tutorial 14:
-        # one_hot_Ys = deepchem.metrics.to_one_hot(Ys, self.n_classes)
-        # generated_points = self.predict_gan_generator(
-        #                                 conditional_inputs=[one_hot_Ys])
+        if self.conditional:
+            Ys = kwargs.get()
+            one_hot_Ys = deepchem.metrics.to_one_hot(Ys, self.model.N_CLASSES)
+            generated_points = self.predict_gan_generator(
+                conditional_inputs=[one_hot_Ys])
+        else:
+            generated_points = self.predict_gan_generator()
         # the above code generates points, but we need uncertainties as well
-        predictions, uncertainties = None, None
+        predictions, uncertainties = generated_points, None
         return predictions, uncertainties
 
-    def _save(filename: str, **kwargs):
+    def _save(self, filename: str, **kwargs):
         """
         Method defined by child to save the predictor.
 
         Method must save into memory the object at self._model
 
-        Args:
+        Arguments:
             filename (str):
                 name of file to save model to
         """
@@ -197,7 +242,9 @@ class GAN(gandy.models.models.UncertaintyModel):
 
         Loads the object to be assigned to self._model.
 
-        Args:
+        Should this be a class method?
+
+        Arguments:
             filename (str):
                 path of file to load
         """
