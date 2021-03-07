@@ -73,6 +73,8 @@ def TestGAN(unittest.test_case):
         subject = gans.gan(xshape=(4,), yshape=(2,))
         kwargs = dict(option=x1)
         subject._train(Xs, Ys, kwargs)
+
+        
         # assert generator model called fit and discriminator called predict
         subject.generator.fit.assert_called_with(Xs, Ys, kwargs)
         subject.discriminator.predict.assert_called_with(Xs, Ys, kwargs)
@@ -83,10 +85,14 @@ def TestGAN(unittest.test_case):
         Test predict function.
 
         The predict function returns predictions and uncertainties.
-        This checks predictions and uncertainties are the appropriate shape.
+        This checks predictions and uncertainties are the appropriate shape
+        and the appropriate deepchem calls are made.
         '''
         Xs = 'Xs'
         subject = gans.gan(xshape=(4,), yshape=(2,))
+
+        subject.predict_gan_generator = mock.MagicMock(name='predict_gan_generator')
+
         subject._predict.return_value = ('preds', 'ucs')
         preds, ucs = subject._predict(Xs)
         subject._predict.assert_called_with(Xs)
