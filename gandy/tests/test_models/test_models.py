@@ -4,30 +4,31 @@ import unittest
 import unittest.mock
 
 import gandy.models.models as mds
+import gandy.quality_est.metrics
 
 
 class TestUncertaintyModel(unittest.TestCase):
 
-    def test___init__(self):
+    @unittest.mock.patch('gandy.models.models.UncertaintyModel.build')
+    def test___init__(self, mocked_build):
         """Test initialization of the UncertaintyModel class"""
         # first mock the build method
-        with unittest.patch(
-            'gandy.models.models.UncertaintyModel.build'
-        ) as mocked_build:
-            # initialize
-            subject = mds.UncertaintyModel(xshape=(6,),
-                                           yshape=(3,),
-                                           keyword=5)  # keywords passed?
-            # test assignment of shapes
-            self.assertTrue(hasattr(subject, 'xshape'))
-            self.assertTrue(hasattr(subject, 'yshape'))
-            # test that build was called
-            mocked_build.assert_called_once_with(keyword=5)
-            # test that we initializzed sessions
-            self.assertEqual(subject.sessions, {})
+        # initialize
+        subject = mds.UncertaintyModel(xshape=(6,),
+                                       yshape=(3,),
+                                       keyword=5)  # keywords passed?
+        # test assignment of shapes
+        self.assertTrue(hasattr(subject, 'xshape'))
+        self.assertTrue(hasattr(subject, 'yshape'))
+        # test that build was called
+        mocked_build.assert_called_once_with(keyword=5)
+        # test that we initializzed sessions
+        self.assertEqual(subject.sessions, {})
+        self.assertTrue(hasattr(subject, 'model'))
         return
 
-    def test_check(self):
+    @unittest.mock.patch('gandy.models.models.UncertaintyModel.build')
+    def test_check(self, mocked_build):
         """Test the ability of the model to recognize improper data"""
         # prepare some data objects to check.
         # we only have numpy available in the dependencies
@@ -43,7 +44,7 @@ class TestUncertaintyModel(unittest.TestCase):
             Xs_bad = numpy.ones(
                 (20, 3, 4)
             )
-            Xs_non_numeric = Xs_good.astype('str')
+            Xs_non_numeric = numpy.array(['str'])
             Ys_good = numpy.ones(
                 (20, *yshape)  # matching 20 data points
             )
@@ -113,32 +114,36 @@ class TestUncertaintyModel(unittest.TestCase):
             mds.UncertaintyModel((1,), (1,))
         # mock _build from here on out - we don;t want the init build to
         # interfere
-        mds.UncertaintyModel._build = unittest.mock.MagicMock()
         return
 
-    def test__get_metric(self):
+    @unittest.mock.patch(
+        'gandy.models.models.UncertaintyModel._build',
+        return_value='Model'
+    )
+    def test__get_metric(self, mocked__build):
         """test ability to retrieve the correct callables"""
-        with unittest.mock.patch('gandy.quality_est.metrics'
-                                 ) as mocked_metrics:
-            def fake_metric(trues, predictions, uncertainties):
-                return 5
-            mocked_metrics.fake_metric = fake_metric
-            # initialize the subject
-            subject = mds.UncertaintyModel((1,), (1,))
-            # try all success cases
-            metric_out = subject._get_metric(fake_metric)
-            self.assertEqual(fake_metric, metric_out)
-            metric_out = subject._get_metric('fake_metric')
-            self.assertEqual(fake_metric, metric_out)
-            metric_out = subject._get_metric(None)
-            self.assertTrue(metric_out is None)
-            # and failure, not a class
-            with self.assertRaises(AttributeError):
-                subject._get_metric('not_a_class')
+        def fake_metric(trues, predictions, uncertainties):
+            return 5
+        # initialize the subject
+        subject = mds.UncertaintyModel((1,), (1,))
+        # try all success cases
+        metric_out = subject._get_metric(fake_metric)
+        self.assertEqual(fake_metric, metric_out)
+        metric_out = subject._get_metric('Metric')
+        self.assertEqual(gandy.quality_est.metrics.Metric, metric_out)
+        metric_out = subject._get_metric(None)
+        self.assertTrue(metric_out is None)
+        # and failure, not a class
+        with self.assertRaises(AttributeError):
+            subject._get_metric('not_a_class')
 
         return
 
-    def test_train(self):
+    @unittest.mock.patch(
+        'gandy.models.models.UncertaintyModel._build',
+        return_value='Model'
+    )
+    def test_train(self, mocked__build):
         """Proper passing of data to _train and updating of sessions"""
         subject = mds.UncertaintyModel((1,), (1,))
         # mock the required nested calls
@@ -154,6 +159,7 @@ class TestUncertaintyModel(unittest.TestCase):
         mocked__get_metric = unittest.mock.MagicMock(
             return_value='some_metric'
         )
+        subject._get_metric = mocked__get_metric
         # run the train and check proper calls
         with unittest.mock.patch('time.clock', return_value='thetime'
                                  ) as mocked_time:
@@ -177,14 +183,22 @@ class TestUncertaintyModel(unittest.TestCase):
             self.assertTrue('Starttime: thetime' in subject.sessions.keys())
         return
 
-    def test__train(self):
+    @unittest.mock.patch(
+        'gandy.models.models.UncertaintyModel._build',
+        return_value='Model'
+    )
+    def test__train(self, mocked__build):
         """All it should do is raise an error for child to define"""
         subject = mds.UncertaintyModel((1,), (1,))
         with self.assertRaises(mds.NotImplimented):
             subject._train('Xs', 'Ys')
         return
 
-    def test_predict(self):
+    @unittest.mock.patch(
+        'gandy.models.models.UncertaintyModel._build',
+        return_value='Model'
+    )
+    def test_predict(self, mocked__build):
         """Test proper flagging of predictions"""
         subject = mds.UncertaintyModel((1,), (1,))
         # prepare and mock objects
@@ -192,7 +206,7 @@ class TestUncertaintyModel(unittest.TestCase):
         # here we set up a rotation of predictions, uncertaintains for
         # _predict to return, allowing us to test _predict output handling
         _predict_return = [
-            (['length', '2'], numpy.array([5, 10], dtype=int)),  # works
+            ([5, 10], numpy.array([5, 10], dtype=int)),  # works
             (['length', '2'], ['wrong', 'dtype']),  # failure, can't flag
             (['length', '2'], 5.0),  # failure, pred/unc length mismatch
             ('length1', 5.0),  # failure, does not match length of input
@@ -208,8 +222,8 @@ class TestUncertaintyModel(unittest.TestCase):
         )
         subject._predict = mocked__predict
         # expected faulure, threshold not correct type
-        with self.raises(TypeError):
-            subject.predict(Xs_in, uc_threshold='seven')
+        with self.assertRaises(TypeError):
+            subject.predict(Xs_in, uc_threshold='not_number')
         # first rotation, expected to work, check outputs and correct calls
         preds, uncs, flags = subject.predict(Xs_in,
                                              uc_threshold=7.0,
@@ -228,7 +242,7 @@ class TestUncertaintyModel(unittest.TestCase):
         self.assertTrue(numpy.array_equal(flags,
                                           numpy.array([[False], [True]])))
         # first failure case, can't flag strings
-        with self.assertRaised(TypeError):
+        with self.assertRaises(TypeError):
             subject.predict(Xs_in)
         # lengths of pred/unc do not match
         with self.assertRaises(ValueError):
@@ -242,14 +256,22 @@ class TestUncertaintyModel(unittest.TestCase):
 
         return
 
-    def test__predict(self):
+    @unittest.mock.patch(
+        'gandy.models.models.UncertaintyModel._build',
+        return_value='Model'
+    )
+    def test__predict(self, mocked__build):
         """Should just raise an error"""
         subject = mds.UncertaintyModel((1,), (1,))
         with self.assertRaises(mds.NotImplimented):
             subject._predict('Xs')
         return
 
-    def test_score(self):
+    @unittest.mock.patch(
+        'gandy.models.models.UncertaintyModel._build',
+        return_value='Model'
+    )
+    def test_score(self, mocked__build):
         """Test proper handling of internal function when score is called"""
         subject = mds.UncertaintyModel((1,), (1,))
         Xs = 'Xs'
@@ -283,10 +305,14 @@ class TestUncertaintyModel(unittest.TestCase):
         self.assertEqual((2, 1), values.shape)
         # check that it can find failures in metric computation
         with self.assertRaises(ValueError):
-            subject.score(Xs, Ys)
+            subject.score(Xs, Ys, metric='some_metric')
         return
 
-    def test_property_shapes(self):
+    @unittest.mock.patch(
+        'gandy.models.models.UncertaintyModel._build',
+        return_value='Model'
+    )
+    def test_property_shapes(self, mocked__build):
         """Ensure that nonsensical shapes cannot be set"""
         subject = mds.UncertaintyModel((1,), (1,))
         bad_shapes_to_test = ['not tuple', ('tuple', 'of', 'not', 'int')]
@@ -304,7 +330,11 @@ class TestUncertaintyModel(unittest.TestCase):
         self.assertEqual(subject.model, None)
         return
 
-    def test_property_model(self):
+    @unittest.mock.patch(
+        'gandy.models.models.UncertaintyModel._build',
+        return_value='Model'
+    )
+    def test_property_model(self, mocked__build):
         """ensure safety of the model attribute"""
         subject = mds.UncertaintyModel((1,), (1,))
         with self.assertRaises(RuntimeError):
