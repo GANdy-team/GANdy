@@ -11,6 +11,8 @@ ish building, training, predicting, and evaluateing.
 """
 
 # imports
+import inspect
+import time
 from typing import Tuple, Iterable, Any, Type, Callable, Union
 
 import numpy
@@ -21,12 +23,19 @@ import gandy.quality_est.metrics
 Array = Type[numpy.ndarray]
 
 
-class NotImplimented(Warning):
+class NotImplimented(Exception):
     """Warning to indicate that a child class has not yet implimented necessary
-    methods. """
-    # pseudocode
-    # . define the exception
-    pass
+    methods.
+
+    Args:
+        inst - the class instance that raises this exception
+    """
+
+    def __init__(self, inst):
+        self.message = """The `{}` method has not yet been implimented by
+ this class: `{}`.""".format(inspect.stack()[1][3], inst.__class__)
+        super().__init__(self.message)
+        return
 
 
 class UncertaintyModel:
@@ -56,19 +65,18 @@ class UncertaintyModel:
             tuple is appended of (session name, losses) where losses is
             determined by the output of _train.
     """
-    # to contain dictionary of callable metric classes from the metrics module
     metrics = gandy.quality_est.metrics
-
     """Available metrics defined in gandy.metrics"""
 
     def __init__(self,
                  xshape: Tuple[int],
                  yshape: Tuple[int],
                  **kwargs):
-        # pseudocode
-        # . set self shapes
-        # . assign self model by running build function
-        # . create empty sessions list
+        self._model = None
+        self.xshape = xshape
+        self.yshape = yshape
+        self.sessions = {}
+        self.build(**kwargs)
         return
 
     def check(self,
@@ -89,15 +97,51 @@ class UncertaintyModel:
                 Xs, the formated X data
                 Ys, the formated Y data if present
         """
-        # pseudocode
-        # . assert data type has shape attribute
-        # . check shapes of Xs and Ys against self shapes
-        # . raise error if do not match
-        # . convert to numpy
-        if Ys:
-            return Xs, Ys
+        if hasattr(Xs, 'shape'):
+            pass
         else:
-            return Xs
+            raise AttributeError('Xs has no shape attribute, ensure the\
+ passed data has a shape')
+        if Ys is not None:
+            if hasattr(Ys, 'shape'):
+                pass
+            else:
+                raise AttributeError('Ys has no shape attribute, ensure the\
+ passed data has a shape')
+
+        try:
+            Xs_ = numpy.array(Xs).astype(numpy.float64)
+        except ValueError:
+            raise TypeError('X data contains non numerics.')
+
+        try:
+            Xs_ = Xs_.reshape(-1, *self.xshape)
+            if len(Xs_) != len(Xs):
+                raise ValueError()
+        except ValueError:
+            raise ValueError('Cannot reshape X data ({}) to the model input\
+ shape ({}). ensure the correct shape of data'.format(
+                Xs.shape[1:], self.xshape)
+            )
+        if Ys is not None:
+            Ys_ = numpy.array(Ys)
+            try:
+                Ys_ = Ys_.reshape(-1, *self.yshape)
+                if len(Ys_) != len(Ys):
+                    raise ValueError()
+            except ValueError:
+                raise ValueError('Cannot reshape Y data ({}) to the model\
+ input shape ({}). ensure the correct shape of data'.format(
+                    Ys.shape[1:], self.yshape)
+                )
+            if len(Xs_) == len(Ys_):
+                pass
+            else:
+                raise ValueError('X and Y data do not have the same number of\
+ examples. Ensure the data are example pairs.')
+            return Xs_, Ys_
+        else:
+            return Xs_
 
     def build(self, **kwargs):
         """Construct and store the predictor.
@@ -108,8 +152,7 @@ class UncertaintyModel:
             **kwargs:
                 keyword arguments to pass to `_build`
         """
-        # pseudocode
-        # . set self model to _build
+        self._model = self._build(**kwargs)
         return
 
     def _build(self, *args, **kwargs) -> Callable:
@@ -131,16 +174,14 @@ class UncertaintyModel:
             None:
                 children will return the predictor
         """
-        # pseudocode
-        # . raise not implimented
+        raise NotImplimented(self)
         model = None
         return model
 
     def train(self,
               Xs: Iterable,
-
               Ys: Iterable,
-              metric: Union[str, Callable],
+              metric: Union[str, Callable] = None,
               session: str = None,
               **kwargs):
         """Train the predictor for one session, handled by `_train`.
@@ -165,11 +206,15 @@ class UncertaintyModel:
                 Keyword arguments to pass to `_train` and assign non-default \
                 training parameters.
         """
-        # pseudocode
-        # . check data inputs with check method - conver to numpy
-        # . get metric method
-        # . execute _train with formated data and metric (?)
-        # . update session losses with session _train losses
+        if session is not None:
+            sname = session
+        else:
+            sname = 'Starttime: ' + str(time.clock())
+        metric = self._get_metric(metric)
+
+        Xs_, Ys_ = self.check(Xs, Ys)
+        losses = self._train(Xs_, Ys_, metric=metric, **kwargs)
+        self.sessions[sname] = losses
         return
 
     def _train(self,
@@ -203,8 +248,7 @@ class UncertaintyModel:
                 Desired tracking of losses during training. Not implimented
                 here, and returns None.
         """
-        # psudocode
-        # . raise not implimented
+        raise NotImplimented(self)
         losses = None
         return losses
 
@@ -234,12 +278,33 @@ class UncertaintyModel:
                 (optional) array of flags of uncertain predictions higher
                     than threshhold of same length as Xs
         """
-        # pseudocode
-        # . check X data with check function
-        # . run _predict to return predictions and uncertainties
-        # . if threshhold, return predictions, uncertainties, and flags
-        predictions, uncertainties, flags = None, None, None
-        return predictions, uncertainties, flags
+        Xs_ = self.check(Xs)
+        if uc_threshold is not None:
+            try:
+                thresh = numpy.float64(uc_threshold)
+            except ValueError:
+                raise TypeError(
+                    'The threshold ({}) cannot be made a float.'.format(
+                        uc_threshold)
+                )
+        else:
+            pass
+
+        predictions, uncertainties = self._predict(Xs_, **kwargs)
+        predictions = numpy.array(predictions).reshape(len(Xs), *self.yshape)
+        uncertainties = numpy.array(uncertainties).reshape(
+            len(Xs), *self.yshape)
+        try:
+            uncertainties = uncertainties.astype(numpy.float64)
+        except ValueError:
+            raise TypeError('Uncertainties are not numeric. Check the return\
+ of the _predict method.')
+
+        if uc_threshold is not None:
+            flags = uncertainties > thresh
+            return predictions, uncertainties, flags
+        else:
+            return predictions, uncertainties
 
     def _predict(self,
                  Xs: Array,
@@ -265,9 +330,7 @@ class UncertaintyModel:
                 array of prediction uncertainties of targets withthe same
                     length as Xs
         """
-        # psuedocode
-        # . raise not implimented
-        # . set pred, unc to None
+        raise NotImplimented(self)
         predictions, uncertainties = None, None
         return predictions, uncertainties
 
@@ -279,7 +342,19 @@ class UncertaintyModel:
             metric_in (str, callable, None):
                 metric name to get or callable to use"""
         # if statement, None, string, callable
-        metric_out = None
+        if metric_in is None:
+            metric_out = None
+        elif callable(metric_in):
+            metric_out = metric_in
+        elif isinstance(metric_in, str):
+            if hasattr(self.metrics, metric_in):
+                metric_out = getattr(self.metrics, metric_in)
+            else:
+                raise AttributeError('gandy has no metric called {}'.format(
+                    metric_in)
+                )
+        else:
+            raise ValueError('Unable to parse metric')
         return metric_out
 
     def score(self,
@@ -310,13 +385,15 @@ class UncertaintyModel:
             ndarray:
                 Score array for each prediction.
         """
-        # pseudocode
-        # . if statement to get metric object from metrics or specified
-        # . else raise undefined metric
-        # . check data
-        # . predictions, uncertainties = execute self._predict on Xs
-        # . pass predictions, uncertainties to metric get back costs
-        metric_value, metric_values = None, None
+        metric = self._get_metric(metric)
+        Xs_, Ys_ = self.check(Xs, Ys)
+
+        predictions, uncertainties = self.predict(Xs_, **kwargs)
+
+        metric_value, metric_values = metric(Ys_, predictions, uncertainties)
+        metric_values = numpy.array(metric_values).astype(numpy.float64)
+        metric_values = metric_values.reshape(len(Xs), -1)
+
         return metric_value, metric_values
 
     def save(self,
@@ -333,9 +410,6 @@ class UncertaintyModel:
             **kwargs:
                 keyword arguments to pass to _save, child specified method
         """
-        # pseudocode
-        # . execute _save with filename
-        # . save json with xshape, yshape, sesssions, etc.
         return
 
     def _save(filename: str,
@@ -399,11 +473,16 @@ class UncertaintyModel:
     @model.setter
     def model(self, new_model):
         # raise exception does not support direct setting, use build function
+        raise RuntimeError(
+            'Do not set the model directly, execute the build method')
         return
 
     @model.deleter
     def model(self):
         # print message about deleting model, build needs to be ran
+        if self._model is not None:
+            print('WARNING: model no longer valid, deleting. Rerun build()')
+        self._model = None
         return
 
     @property
@@ -414,7 +493,15 @@ class UncertaintyModel:
     @xshape.setter
     def xshape(self, new_xshape):
         # test new shape, delete model
+        if isinstance(new_xshape, tuple):
+            if all([isinstance(dim, int) for dim in new_xshape]):
+                pass
+            else:
+                raise TypeError('Non-int dimension found in xshape input')
+        else:
+            raise TypeError('xshape must be a tuple (dims of an x datum)')
         self._xshape = new_xshape
+        del self.model
         return
 
     @property
@@ -425,5 +512,13 @@ class UncertaintyModel:
     @yshape.setter
     def yshape(self, new_yshape):
         # test new shape, delete model
+        if isinstance(new_yshape, tuple):
+            if all([isinstance(dim, int) for dim in new_yshape]):
+                pass
+            else:
+                raise TypeError('Non-int dimension found in yshape input')
+        else:
+            raise TypeError('yshape must be a tuple (dims of a y datum)')
         self._yshape = new_yshape
+        del self.model
         return
