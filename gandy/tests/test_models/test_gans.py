@@ -1,4 +1,7 @@
-"""Testing functions for UncertaintyModel gan class."""
+"""
+Testing functions for UncertaintyModel gan class.
+"""
+
 import numpy as np
 import unittest
 import unittest.mock
@@ -10,7 +13,7 @@ import gandy.models.models
 
 
 def TestGAN(unittest.test_case):
-	""" Test GAN class."""
+    """Test GAN class."""
 
     def test_inheritence():
         # ensure the subclass class inherits from both parent classes
