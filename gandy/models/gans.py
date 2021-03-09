@@ -65,26 +65,25 @@ class GAN(gandy.models.models.UncertaintyModel):
         # get noise shape from kwargs
         # default is 10 dimensional
         noise_shape = kwargs.get('noise_shape', (10,))
-        # get n_classes from kwargs
+        # get n_classes from kwargs, default None
         n_classes = kwargs.get('n_classes', None)
 
         # determine whether to use gan or conditional gan
         if n_classes is not None:
             # if number of classes is specified, assumes conditional GAN
             self.conditional = True
+            # Should this be flagged somewhere?...
             if self.yshape[0] > 1:
                 # Ys are already one hot encoded
                 n_classes = kwargs.get('n_classes', self.yshape[0])
             else:
                 # Ys are NOT one hot encoded
-                # this should be flagged somewhere...
+                # Or this is regression, which would be == 1
                 n_classes = kwargs.get('n_classes', self.yshape[0])
         else:
-            self.conditional = False
             # if no n_classes specified, assumed to be regression
             # and no need for conditional inputs
-            # e.g., regression would be == 1
-            n_classes = kwargs.get('n_classes', self.yshape[0])
+            self.conditional = False
 
         # get other kwargs as hyperparameters
         hyperparams = {key: kwargs[key] for key in kwargs.keys() -
@@ -93,10 +92,10 @@ class GAN(gandy.models.models.UncertaintyModel):
         # instantiating the model as the deepchem gan
         if self.conditional:
             model = dcgan.CondDCGAN(self.xshape, self.yshape, noise_shape,
-                                    hyperparams, n_classes=n_classes)
+                                    n_classes, hyperparams)
         else:
-            model = dcgan.DCGAN(self.xshape, self.yshape,
-                                noise_shape, hyperparams)
+            model = dcgan.DCGAN(self.xshape, self.yshape, noise_shape,
+                                n_classes, hyperparams)
         return model
 
     def generate_data(self,

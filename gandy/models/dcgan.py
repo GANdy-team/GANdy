@@ -45,7 +45,7 @@ class DCGAN(deepchem.models.GAN):
     This class builds off of the deepchem GAN class found at the url above.
     """
 
-    def __init__(self, xshape, yshape, noise_shape, n_classes=None, **kwargs):
+    def __init__(self, xshape, yshape, noise_shape, n_classes, **kwargs):
         """Deepchem init function + class atributes."""
         super(DCGAN, self).__init__(**kwargs)
 
@@ -78,16 +78,16 @@ class DCGAN(deepchem.models.GAN):
                 # generator param
                 param = key.replace('generator_', '')
                 # check if the key is a valid hyperparamter
-                if param in generator_hyperparameter.keys():
-                    generator_hyperparameters[param] = kwargs[key]
+                if param in self.generator_hyperparameters.keys():
+                    self.generator_hyperparameters[param] = kwargs[key]
                 else:
                     warnings.warn(f"Incorrect key {key}. Must be in\
                         {Base_hyperparams.keys()}")
             elif key.startswith('discriminator_'):
                 # discriminator param
                 param = key.replace('discriminator_', '')
-                if param in discriminator_hyperparameter.keys():
-                    discriminator_hyperparameters[param] = kwargs[key]
+                if param in self.discriminator_hyperparameters.keys():
+                    self.discriminator_hyperparameters[param] = kwargs[key]
                 else:
                     warnings.warn(f"Incorrect key {key}. Must be in\
                         {Base_hyperparams.keys()}")
