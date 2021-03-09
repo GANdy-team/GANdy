@@ -67,16 +67,18 @@ class GAN(gandy.models.models.UncertaintyModel):
         dcgan.YSHAPE = self.yshape
         # get noise shape from kwargs
         # default is 10 dimensional
-        dcgan.NOISE_SHAPE = kwargs.get('noise_shape', (10,))
-        # get n_classes from kwargs
-        # default is the y dimension
-        # e.g., regression would be == 1
-        # This would also be correct for a one hot encoded y vector.
-        dcgan.N_CLASSES = kwargs.get('n_classes', self.yshape[0])
+        self.noise_shape = kwargs.get('noise_shape', (10,))
+        dcgan.NOISE_SHAPE = self.noise_shape
 
         # determine whether to use gan or conditional gan
-        if len(self.yshape) == 3:
+        if len(self.yshape) == 2:
             self.conditional = True
+            # get n_classes from kwargs
+            # default is the y dimension
+            # e.g., regression would be == 1
+            # This would also be correct for a one hot encoded y vector.
+            self.n_classes = kwargs.get('n_classes', self.yshape[0])
+            dcgan.N_CLASSES = self.n_classes
         else:
             self.conditional = False
 
@@ -211,7 +213,8 @@ class GAN(gandy.models.models.UncertaintyModel):
         """
         # adapted from deepchem tutorial 14:
         if self.conditional:
-            Ys = kwargs.get()
+            Ys = kwargs.get('Ys', None)
+            assert Ys is not None, "This is a cGAN. Must specify Ys (Ys=) to call predict."
             one_hot_Ys = deepchem.metrics.to_one_hot(Ys, self.model.N_CLASSES)
             generated_points = self.predict_gan_generator(
                 conditional_inputs=[one_hot_Ys])
