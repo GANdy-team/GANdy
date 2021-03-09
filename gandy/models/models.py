@@ -399,30 +399,14 @@ class UncertaintyModel:
     def save(self,
              filename: str,
              **kwargs):
-        """Save the model out of memory to the hard drive by specified format.
-
-        Save to model to hardrive as two files, "`filename`.json" and
-        "`filename`.XX" where the XX is determined by the predictor type
+        """Save the model out of memory to the hard drive. Must be overloaded
+        by child.
 
         Args:
             filename (str):
                 path to save model to, no extension
-            **kwargs:
-                keyword arguments to pass to _save, child specified method
         """
-        return
-
-    def _save(filename: str,
-              **kwargs):
-        """Method defined by child to save the predictor.
-
-        Method must save into memory the object at self.model
-
-        Args:
-            filename (str):
-                name of file to save model to
-        """
-        # raise not implimented
+        raise NotImplimented(self)
         return
 
     @classmethod
@@ -431,39 +415,18 @@ class UncertaintyModel:
              **kwargs):
         """Load a model from hardrive at filename.
 
-        From two files, "`filename`.json" and "`filename`.XX" where the XX is
-        determined by the predictor type, load the model into memory.
+        Must be overloaded by child.
 
         Args:
             filename (str):
                 path of file to load
-            **kwargs:
-                keyword arguments to pass to _load
 
         Returns:
             instance of class: the loaded UncertaintyModel
         """
-        # pseudocode
-        # . load the json and run cls(args)
-        # . predictor = _load
-        # . instance._model = predictor
+        raise NotImplimented(cls)
         instance = None
         return instance
-
-    def _load(self,
-              filename: str,
-              **kwargs):
-        """Method defined by child to load a predictor into memory.
-
-        Loads the object to be assigned to self.model.
-
-        Args:
-            filename (str):
-                path of file to load
-        """
-        # raise not implimented
-        model = None
-        return model
 
     @property
     def model(self):

@@ -340,3 +340,20 @@ class TestUncertaintyModel(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             subject.model = 'Not None'
         return
+
+    @unittest.mock.patch(
+        'gandy.models.models.UncertaintyModel._build',
+        return_value='Model'
+    )
+    def test_save(self, mocked__build):
+        """Not implimented, we don't want to save parent"""
+        subject = mds.UncertaintyModel((1,), (1,))
+        with self.assertRaises(mds.NotImplimented):
+            subject.save('filename')
+        return
+
+    def test_load(self):
+        """Not implimented, don't want to load parent"""
+        with self.assertRaises(mds.NotImplimented):
+            mds.UncertaintyModel.load('filename')
+        return
