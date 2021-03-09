@@ -17,7 +17,7 @@ import numpy
 Array = Type[numpy.ndarray]
 
 
-class bnn(gandy.models.models.UncertaintyModel):
+class BNN(gandy.models.models.UncertaintyModel):
     """
     Implements a Bayesian Neural Network (BNN)
     BNNS place a prior on the weights of the network and apply Bayes rule.
@@ -34,25 +34,6 @@ class bnn(gandy.models.models.UncertaintyModel):
     https://keras.io/examples/keras_recipes/bayesian_neural_networks/
     for a guide to implementing a BNN with Keras.
     """
-
-    def create_model_inputs(self, feature_names) -> Tuple[Object]:
-        '''
-        Arguments:
-            feature_names - example data to make predictions on
-                type == ndarray, list, or dictionary
-        Returns:
-            inputs
-                type == dictionary of Keras Input layers
-        '''
-        # do something like:
-        # https://keras.io/examples/keras_recipes/bayesian_neural_networks/
-        # inputs = {}
-        # for feature_name in feature_names:
-        #     inputs[feature_name] = tf.keras.layers.Input(
-        #         name=feature_name, shape=(1,), dtype=tf.float32
-        #     )
-        inputs = None
-        return inputs
 
     def prior(kernel_size, bias_size, dtype=None) -> Object:
         '''
@@ -158,7 +139,7 @@ class bnn(gandy.models.models.UncertaintyModel):
         # loss = negative_loglikelihood(targets, estimated_distribution)
         # get train_size, i.e., train_size = xshape[0]
 
-        # inputs = create_model_inputs()
+        # inputs = keras.Input(self.xshape)
         # input_values = list(inputs.values())
         # features = tf.keras.layers.concatenate(input_values)
         # features = tf.keras.layers.BatchNormalization()(features)
@@ -184,8 +165,7 @@ class bnn(gandy.models.models.UncertaintyModel):
 
         # model = keras.Model(inputs=inputs, outputs=outputs)
         # model.compile(**kwargs)
-        # self.model = model
-        return self.model
+        return model
 
     # overridden method from UncertaintyModel class
     def _train(self,
