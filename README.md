@@ -15,3 +15,6 @@ If any new installed development dependancies, add them to the devenv.yml enviro
 To update dev environment with new dependencies in the .yml file, <code>conda env update --file devenv.yml</code>
 
 ./working/ is a workspace for notebooks/testing. It will be ignored by git by default, and will be removed upon release. To specifically "save" your files to git or to share work with other developers, use <code>git add --force working</code>.
+
+## Testing
+Tests located at gandy/tests

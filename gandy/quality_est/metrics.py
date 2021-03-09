@@ -15,16 +15,12 @@ input data provided.
 '''
 
 # Imports
-from typing import Tuple, Iterable, Any, Object, Type, List
+from typing import Type, Tuple
 
 import numpy as np
-import math
 
 # Typing
 Array = Type[np.ndarray]
-
-# Define dictionary of available metrics
-Metric_codex = {}
 
 
 # Parent class for metric
@@ -97,6 +93,8 @@ class MSE(Metric):
     # pseudocode
     # define mathematical formula for MSE calculation using self.args
     # iteration over arrays likely, then plug into defined formula
+        MSE_value = None
+        MSE_values = None
         return MSE_value, MSE_values
 
 
@@ -130,6 +128,8 @@ class RMSE(Metric):
     # pseudocode
     # define mathematical formula for RMSE calculations using self.args
     # iteration over arrays and plug into defined formula
+        RMSE_value = None
+        RMSE_values = None
         return RMSE_value, RMSE_values
 
 
@@ -160,4 +160,5 @@ class F1(Metric):
     # pseudocode
     # define mathematical formula for F1 calculation using self.args variables
     # iteration over arrays and plug into formula
+        F1_value = None
         return F1_value

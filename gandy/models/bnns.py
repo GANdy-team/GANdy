@@ -1,21 +1,24 @@
-'''
+"""
+Bayes NN.
+
 This contains the Bayes NN class, based on the KEras tutorial at
 https://keras.io/examples/keras_recipes/bayesian_neural_networks/
-'''
+"""
 
 # imports
 import gandy.models.models
-import tensorflow as tf
+# import tensorflow as tf
 
 # typing imports
-from typing import Tuple, Iterable, Any, Object, Type
+from typing import Tuple, Any, Object, Type
 
 # typing
+import numpy
 Array = Type[numpy.ndarray]
 
 
 class bnn(gandy.models.models.UncertaintyModel):
-    '''
+    """
     Implements a Bayesian Neural Network (BNN)
     BNNS place a prior on the weights of the network and apply Bayes rule.
     The object of the Bayesian approach for modeling neural networks is to
@@ -30,7 +33,7 @@ class bnn(gandy.models.models.UncertaintyModel):
     Thank you to
     https://keras.io/examples/keras_recipes/bayesian_neural_networks/
     for a guide to implementing a BNN with Keras.
-    '''
+    """
 
     def create_model_inputs(self, feature_names) -> Tuple[Object]:
         '''
@@ -48,7 +51,8 @@ class bnn(gandy.models.models.UncertaintyModel):
         #     inputs[feature_name] = tf.keras.layers.Input(
         #         name=feature_name, shape=(1,), dtype=tf.float32
         #     )
-        # return inputs
+        inputs = None
+        return inputs
 
     def prior(kernel_size, bias_size, dtype=None) -> Object:
         '''
@@ -73,6 +77,7 @@ class bnn(gandy.models.models.UncertaintyModel):
         #         )
         #     ]
         # )
+        prior_model = None
         return prior_model
 
     # Define variational posterior weight distribution as multivariate
@@ -99,6 +104,7 @@ class bnn(gandy.models.models.UncertaintyModel):
         #         tfp.layers.MultivariateNormalTriL(n),
         #     ]
         # )
+        posterior_model = None
         return posterior_model
 
     # Since the output of the model is a distribution, rather than a
@@ -198,6 +204,7 @@ class bnn(gandy.models.models.UncertaintyModel):
                 ters or pass to nested functions.
         '''
         # losses = self.model.fit(Xs, **kwargs)
+        losses = None
         return losses
 
     # overridden method from UncertaintyModel class
@@ -224,6 +231,7 @@ class bnn(gandy.models.models.UncertaintyModel):
         # mean, std = self.model.evaluate(Xs, **kwargs)
         # BNN model returns mean and variance as output
         # convert to predictions and uncertainties
+        predictions, uncertainties = None, None
         return predictions, uncertainties
 
         def _save(filename: str, **kwargs):
@@ -248,4 +256,5 @@ class bnn(gandy.models.models.UncertaintyModel):
                     path of file to load
             """
             # call Keras.load function
+            model = None
             return model
