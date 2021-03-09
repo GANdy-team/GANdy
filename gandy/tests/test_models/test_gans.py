@@ -13,9 +13,10 @@ import gandy.models.models
 class TestGAN(unittest.TestCase):
     """Test GAN class."""
 
-    def test_inheritence():
+    def test_inheritence(self):
         """Ensure the subclass class inherits from parent class."""
-        assert issubclass(gans.gan, gandy.models.models.UncertaintyModel)
+        self.assertTrue(issubclass(gans.gan,
+                        gandy.models.models.UncertaintyModel))
 
     def test__build(self):
         """
@@ -29,7 +30,12 @@ class TestGAN(unittest.TestCase):
         # create gan instance
         subject = gans.GAN(xshape=(4,), yshape=(2,))
         kwargs = dict(noise_shape=(5,))
-        subject._build(kwargs)
+        subject._build(**kwargs)
+        # created mocked functions
+        subject._model.create_generator = unittest.mock.MagicMock(
+            name='create_generator')
+        subject._model.create_discriminator = unittest.mock.MagicMock(
+            name='create_discriminator')
         # assert create generator function called
         subject._model.create_generator.assert_called_once_with(kwargs)
         # assert create discriminator function called
@@ -41,9 +47,9 @@ class TestGAN(unittest.TestCase):
         # CHECK Conditional GAN
         # create gan instance
         subject = gans.CondGAN(xshape=(4,), yshape=(2, 4))
-        assert issubclass(gans.CondGAN, gans.GAN)
+        self.assertTrue(issubclass(gans.CondGAN, gans.GAN))
         kwargs = dict(noise_shape=(5,), n_classes=4)
-        subject._build(kwargs)
+        subject._build(**kwargs)
         # assert create generator function called
         subject._model.create_generator.assert_called_once_with(kwargs)
         # assert create discriminator function called
@@ -69,10 +75,10 @@ class TestGAN(unittest.TestCase):
                                              return_value="Batch1")
         subject._model.fit_gan = mock.MagicMock(name='fit_gan')
         kwargs = dict(option='x1')
-        subject._train(Xs, Ys, kwargs)
+        subject._train(Xs, Ys, **kwargs)
 
         # assert fit_gan was called
-        subject.iterbacthes.assert_called_with(Xs, Ys, kwargs)
+        subject.iterbacthes.assert_called_with(Xs, Ys, **kwargs)
         subject._model.fit_gan.assert_called_with("Batch1")
         return
 
@@ -91,10 +97,9 @@ class TestGAN(unittest.TestCase):
         subject.predict_gan_generator = mock.MagicMock(
             name='predict_gan_generator', return_value='generated_points')
         preds, ucs = subject._predict(Xs)
-        subject._predict.assert_called_with(Xs)
         subject._model.predict_gan_generator.assert_called_with(None)
-        self.assertEqual('preds', 'generated_points')
-        self.assertEqual('ucs', None)
+        self.assertEqual(preds, 'generated_points')
+        self.assertEqual(ucs, None)
 
         # CHECK Conditional GAN
         Ys = 'Ys'
@@ -105,11 +110,10 @@ class TestGAN(unittest.TestCase):
                         return_value=[10]) as mocked_one_hot:
             preds, ucs = subject._predict(Xs, Ys=Ys)
             mocked_one_hot.assert_called_with(Ys, 3)
-            subject._predict.assert_called_with(Xs, Ys=Ys)
             subject._model.predict_gan_generator.assert_called_with(
                 conditional_inputs=[10])
-            self.assertEqual('preds', 'generated_points')
-            self.assertEqual('ucs', None)
+            self.assertEqual(preds, 'generated_points')
+            self.assertEqual(ucs, None)
         return
 
     @unittest.mock.patch('gandy.models.gans.GAN._build', return_value='Model')
@@ -129,7 +133,7 @@ class TestGAN(unittest.TestCase):
         kwargs = dict(bacthes=1, batch_size=5)
         with mock.patch('deepchem.metrics.to_one_hot',
                         return_value='one_hot_classes') as mocked_one_hot:
-            result = list(subject.iterbacthes(Xs, Ys, kwargs))
+            result = list(subject.iterbacthes(Xs, Ys, **kwargs))
             subject.generate_data.assert_called_with(Xs, Ys, 5)
             expected_result = {subject._model.data_inputs[0]: 'points',
                                subject._model.conditional_inputs[0]:
@@ -144,7 +148,7 @@ class TestGAN(unittest.TestCase):
         kwargs = dict(bacthes=1, batch_size=5)
         with mock.patch('deepchem.metrics.to_one_hot',
                         return_value='one_hot_classes') as mocked_one_hot:
-            result = list(subject.iterbacthes(Xs, Ys, kwargs))
+            result = list(subject.iterbacthes(Xs, Ys, **kwargs))
             subject.generate_data.assert_called_with(Xs, Ys, 5)
             mocked_one_hot.assert_called_with('classes', 10)
             expected_result = {subject._model.data_inputs[0]: 'points',
@@ -169,7 +173,7 @@ class TestGAN(unittest.TestCase):
         return
 
     @unittest.mock.patch('gandy.models.gans.GAN._build', return_value='Model')
-    def test__save(self, mocked__build):
+    def test_save(self, mocked__build):
         """
         Test save function.
 
@@ -185,16 +189,14 @@ class TestGAN(unittest.TestCase):
         subject._model.save.assert_called_with('test_model.h5')
         return
 
-    def test__load(self):
+    @unittest.mock.patch('tf.keras.models.load_model', return_value='Model')
+    def test_load(self, mocked_load):
         """
         Test load function.
 
         This checks that a Keras model instance is returned.
         """
-        # test path save
-        subject = gans.GAN(xshape=(4,), yshape=(2,), n_classes=10)
-        subject.save()
-        # test h5 save
-        subject = gans.GAN(xshape=(4,), yshape=(2,), n_classes=10)
-        subject.save('test_model.h5')
+        # test load
+        subject = gans.GAN.load('test_model.h5')
+        self.assertEqaul(subject, 'Model')
         return
