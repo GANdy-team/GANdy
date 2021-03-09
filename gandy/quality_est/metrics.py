@@ -54,6 +54,7 @@ class Metric:
         # set self.real
         # set self.uncertainties
         # call calculate function within init: self.calculate()
+
     def calculate(self, **kwargs):
         '''
         Empty calculate function
