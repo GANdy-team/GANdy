@@ -225,6 +225,8 @@ class GAN(gandy.models.models.UncertaintyModel):
                 type == ndarray
         """
         # adapted from deepchem tutorial 14:
+        num_predictions = kwargs.get('num_predictions', 100)
+        predictions = []
         if self.conditional:
             Ys = kwargs.get('Ys', None)
             assert Ys is not None, "This is a cGAN.\
@@ -237,13 +239,18 @@ class GAN(gandy.models.models.UncertaintyModel):
                 # must one hot encode Ys
                 one_hot_Ys = deepchem.metrics.to_one_hot(Ys,
                                                          self.model.n_classes)
-            # generate data with conditional inputs
-            generated_points = self._model.predict_gan_generator(
-                conditional_inputs=[one_hot_Ys])
+                for i in range(num_predictions):
+                    # generate data with conditional inputs
+                    generated_points = self._model.predict_gan_generator(
+                        conditional_inputs=[one_hot_Ys])
+                    predictions.append(generated_points)
         else:
-            generated_points = self._model.predict_gan_generator()
+            for i in range(num_predictions):
+                generated_points = self._model.predict_gan_generator()
+                predictions.append(generated_points)
         # the above code generates points, but we need uncertainties as well
-        predictions, uncertainties = generated_points, None
+        predictions = np.average(predictions, axis=1)
+        uncertainties = np.std(predictions, axis=1)
         return predictions, uncertainties
 
     def save(self, filename: str, **kwargs):
