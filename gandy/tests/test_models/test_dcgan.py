@@ -1,12 +1,12 @@
 """Testing functions for deepchem GAN class."""
 
-import numpy as np
+# import numpy as np
 import unittest
-import unittest.mock
+# import unittest.mock
 
-import deepchem
+# import deepchem
 
-import gandy.models.dcgan as dcgan
+# import gandy.models.dcgan as dcgan
 
 
 class TestGAN(unittest.TestCase):
@@ -19,6 +19,10 @@ class TestGAN(unittest.TestCase):
         The create generator function uses kwargs to create a Keras model.
         This checks that the model compiles.
         """
+        # conditional_model = dcgan.CondDCGAN(xshape, yshape, noise_shape,
+        #                                     n_classes=n_classes, **kwargs)
+
+        # model = dcgan.DCGAN(self.xshape, self.yshape, noise_shape, **kwargs)
         return
 
     def test_create_discriminator(self):
