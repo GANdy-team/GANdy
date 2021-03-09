@@ -35,12 +35,13 @@ class TestGAN(unittest.TestCase):
         # assert create discriminator function called
         subject.create_discriminator.assert_called_once_with(kwargs)
         # check attributes
-        self.assertTrue(hasattr('conditional', False))
-        self.assertTrue(hasattr('noise_shape', (5,)))
+        self.assertTrue(subject.conditional, False)
+        self.assertTrue(subject.noise_shape, (5,))
 
         # CHECK Conditional GAN
         # create gan instance
         subject = gans.CondGAN(xshape=(4,), yshape=(2, 4))
+        assert issubclass(gans.CondGAN, gans.GAN)
         kwargs = dict(noise_shape=(5,), n_classes=4)
         subject._build(kwargs)
         # assert create generator function called
@@ -48,9 +49,9 @@ class TestGAN(unittest.TestCase):
         # assert create discriminator function called
         subject.create_discriminator.assert_called_once_with(kwargs)
         # check attributes
-        self.assertTrue(hasattr('conditional', True))
-        self.assertTrue(hasattr('noise_shape', (5,)))
-        self.assertTrue(hasattr('n_classes', 4))
+        self.assertTrue(subject.conditional, True)
+        self.assertTrue(subject.noise_shape, (5,))
+        self.assertTrue(subject.n_classes, 4)
         return
 
     def test__train(self):
@@ -86,7 +87,7 @@ class TestGAN(unittest.TestCase):
         """
         Xs = 'Xs'
         # CHECK (normal) GAN
-        subject = gans.gan(xshape=(4,), yshape=(2,))
+        subject = gans.GAN(xshape=(4,), yshape=(2,))
         subject.predict_gan_generator = mock.MagicMock(
             name='predict_gan_generator', return_value='generated_points')
         preds, ucs = subject._predict(Xs)
@@ -97,11 +98,11 @@ class TestGAN(unittest.TestCase):
 
         # CHECK Conditional GAN
         Ys = 'Ys'
-        subject = gans.gan(xshape=(4,), yshape=(2, 3), n_classes=3)
+        subject = gans.GAN(xshape=(4,), yshape=(2, 3), n_classes=3)
         subject.predict_gan_generator = mock.MagicMock(
             name='predict_gan_generator', return_value='generated_points')
-        with mock.path('deepchem.metrics.to_one_hot',
-                       return_value=[10]) as mocked_one_hot:
+        with mock.patch('deepchem.metrics.to_one_hot',
+                        return_value=[10]) as mocked_one_hot:
             preds, ucs = subject._predict(Xs, Ys=Ys)
             mocked_one_hot.assert_called_with(Ys, 3)
             subject._predict.assert_called_with(Xs, Ys=Ys)
@@ -111,12 +112,77 @@ class TestGAN(unittest.TestCase):
             self.assertEqual('ucs', None)
         return
 
-    def test__save(self):
+    @unittest.mock.patch('gandy.models.gans.GAN._build', return_value='Model')
+    def test_iterbacthes(self, mocked__build):
+        """
+        Test iterbacthes function.
+
+        The iterbacthes function calls the generate_data function to
+        create batches of boostrapped data.
+        """
+        # check NOT one hot encoded Ys
+        Xs = 'Xs'
+        Ys = 'Ys'
+        subject = gans.GAN(xshape=(4,), yshape=(2,), n_classes=10)
+        subject.generate_data = mock.MagicMock(
+            name='generate_data', return_value=('classes', 'points'))
+        kwargs = dict(bacthes=1, batch_size=5)
+        with mock.patch('deepchem.metrics.to_one_hot',
+                        return_value='one_hot_classes') as mocked_one_hot:
+            result = list(subject.iterbacthes(Xs, Ys, kwargs))
+            subject.generate_data.assert_called_with(Xs, Ys, 5)
+            expected_result = {subject._model.data_inputs[0]: 'points',
+                               subject._model.conditional_inputs[0]:
+                               'classes'}
+            self.assertEqual(expected_result, result)
+        # check one hot encoded Ys
+        Xs = 'Xs'
+        Ys = [[0, 1], [1, 0], [1, 0]]
+        subject = gans.GAN(xshape=(4,), yshape=(2,), n_classes=10)
+        subject.generate_data = mock.MagicMock(
+            name='generate_data', return_value=('classes', 'points'))
+        kwargs = dict(bacthes=1, batch_size=5)
+        with mock.patch('deepchem.metrics.to_one_hot',
+                        return_value='one_hot_classes') as mocked_one_hot:
+            result = list(subject.iterbacthes(Xs, Ys, kwargs))
+            subject.generate_data.assert_called_with(Xs, Ys, 5)
+            mocked_one_hot.assert_called_with('classes', 10)
+            expected_result = {subject._model.data_inputs[0]: 'points',
+                               subject._model.conditional_inputs[0]:
+                               'one_hot_classes'}
+            self.assertEqual(expected_result, result)
+        return
+
+    @unittest.mock.patch('gandy.models.gans.GAN._build', return_value='Model')
+    def test_generate_data(self, mocked__build):
+        """
+        Test generate_data function.
+
+        The generate_data function creates batches of boostrapped data.
+        """
+        Xs = ['x1', 'x2', 'x3']
+        Ys = ['y1', 'y2', 'y3']
+        subject = gans.GAN(xshape=(4,), yshape=(2,), n_classes=1)
+        classes, points = subject.generate_data(Xs, Ys, 5)
+        self.assertEqual(len(classes), 5)
+        self.assertEqual(len(points), 5)
+        return
+
+    @unittest.mock.patch('gandy.models.gans.GAN._build', return_value='Model')
+    def test__save(self, mocked__build):
         """
         Test save function.
 
         This checks that a file is written with the appropriate name.
         """
+        # test path save
+        subject = gans.GAN(xshape=(4,), yshape=(2,), n_classes=10)
+        subject._model.save = mock.MagicMock('save')
+        subject.save('path')
+        subject._model.save.assert_called_with('path')
+        # test h5 save
+        subject.save('test_model.h5')
+        subject._model.save.assert_called_with('test_model.h5')
         return
 
     def test__load(self):
@@ -125,4 +191,10 @@ class TestGAN(unittest.TestCase):
 
         This checks that a Keras model instance is returned.
         """
+        # test path save
+        subject = gans.GAN(xshape=(4,), yshape=(2,), n_classes=10)
+        subject.save()
+        # test h5 save
+        subject = gans.GAN(xshape=(4,), yshape=(2,), n_classes=10)
+        subject.save('test_model.h5')
         return
