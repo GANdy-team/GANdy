@@ -20,12 +20,6 @@ from typing import Tuple, Object, Type
 import numpy as np
 Array = Type[np.ndarray]
 
-# These should be set by the gandy model when _build is called.
-XSHAPE = None
-YSHAPE = None
-NOISE_SHAPE = None
-N_CLASSES = None
-
 
 class DCGAN(deepchem.models.GAN):
     """
@@ -47,6 +41,15 @@ class DCGAN(deepchem.models.GAN):
 
     This class builds off of the deepchem GAN class found at the url above.
     """
+
+    def __init__(self, xshape, yshape, noise_shape, n_classes=None, **kwargs):
+        """Deepchem init function + class atributes."""
+        super(DCGAN, self).__init__(**kwargs)
+        # These should be set by the gandy model when _build is called.
+        self.xshape = xshape
+        self.yshape = yshape
+        self.noise_shape = noise_shape
+        self.n_classes = n_classes
 
     def create_generator(self, **kwargs):
         """
@@ -106,7 +109,8 @@ class DCGAN(deepchem.models.GAN):
             gen = Dropout(dropout)(gen)
 
         # generator outputs
-        gen = Dense(XSHAPE[0], activation=activation)(gen)
+        # is xhape[0] really what we want, or batch size?
+        gen = Dense(self.xshape[0], activation=activation)(gen)
         gen = Dropout(dropout)(gen)
 
         # final construction of Keras model
@@ -159,7 +163,7 @@ class DCGAN(deepchem.models.GAN):
         dropout = kwargs.get('dropout', 0.05)
 
         # construct input
-        data_in = Input(shape=XSHAPE)
+        data_in = Input(shape=self.xshape)
         # build first layer of network
         discrim = Dense(layer_dimensions[0], activation=activation,
                         kernel_regularizer=kernel_regularizer)(data_in)
@@ -185,7 +189,7 @@ class DCGAN(deepchem.models.GAN):
 
         This should be set by the gandy model when an build is called.
         """
-        return NOISE_SHAPE
+        return self.noise_shape
 
     def get_data_input_shapes(self) -> Tuple[int]:
         """
@@ -193,7 +197,7 @@ class DCGAN(deepchem.models.GAN):
 
         This should be set by the gandy model when an build is called.
         """
-        return XSHAPE
+        return self.xshape
 
 
 class CondDCGAN(DCGAN):
@@ -213,7 +217,7 @@ class CondDCGAN(DCGAN):
 
         This should be set by the gandy model when an build is called.
         """
-        return [(N_CLASSES,)]
+        return [(self.n_classes,)]
 
     def create_generator(self, **kwargs) -> Object:
         """
@@ -262,7 +266,7 @@ class CondDCGAN(DCGAN):
 
         # construct input
         noise_in = Input(shape=self.get_noise_input_shape())
-        conditional_in = Input(shape=(N_CLASSES,))
+        conditional_in = Input(shape=(self.n_classes,))
         gen_input = Concatenate()([noise_in, conditional_in])
 
         # build first layer of network
@@ -276,7 +280,7 @@ class CondDCGAN(DCGAN):
             gen = Dropout(dropout)(gen)
 
         # generator outputs
-        gen = Dense(XSHAPE[0], activation=activation)(gen)
+        gen = Dense(self.xshape[0], activation=activation)(gen)
         gen = Dropout(dropout)(gen)
 
         # final construction of Keras model
@@ -329,8 +333,8 @@ class CondDCGAN(DCGAN):
         dropout = kwargs.get('dropout', 0.05)
 
         # construct input
-        data_in = Input(shape=XSHAPE)
-        conditional_in = Input(shape=(N_CLASSES,))
+        data_in = Input(shape=self.xshape)
+        conditional_in = Input(shape=(self.n_classes,))
         discrim_input = Concatenate()([data_in, conditional_in])
 
         # build first layer of network
