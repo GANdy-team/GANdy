@@ -68,11 +68,6 @@ class ucGaussianProcess(gandy.models.models.UncertaintyModel):
             instance of sklearn.gaussian_process:
                 The built predictor.
         """
-        # psueudocode
-        # . if statement classifier or regressor
-        #    instatiate scikitlearn object with kwargs
-        # . else
-        #    raise not implimented error
         if model_type == 'classifier':
             modelcls = sklearn.gaussian_process.GaussianProcessClassifier
         elif model_type == 'regressor':
@@ -104,8 +99,6 @@ class ucGaussianProcess(gandy.models.models.UncertaintyModel):
             None:
                 No losses to return for GP fitting.
         """
-        # pseudocode
-        # . fit self model with Xs, Ys
         self.model.fit(Xs, Ys, **kwargs)
         return None
 
@@ -130,9 +123,6 @@ class ucGaussianProcess(gandy.models.models.UncertaintyModel):
                 array of prediction uncertainties of targets withthe same
                 length as Xs
         """
-        # pseudocode
-        # . get uncertainties and predictions by passing return_std to
-        #     sklearn object's predict
         print(self.model.__class__)
         if isinstance(self.model,
                       sklearn.gaussian_process.GaussianProcessRegressor):
