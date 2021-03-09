@@ -19,7 +19,7 @@ ctions of target values and uncertainties.
     score = cfr.evaluate(Xs, Ys, metric='mse')
 """
 # imports
-from typing import Type, Tuple
+from typing import Type, Tuple, Callable
 
 import sklearn.gaussian_process
 import numpy
@@ -81,6 +81,7 @@ class ucGaussianProcess(gandy.models.models.UncertaintyModel):
     def _train(self,
                Xs: Array,
                Ys: Array,
+               metric: Callable = None,
                **kwargs):
         """Trains the gaussian process on training data via covariance kernel.
 
@@ -123,7 +124,6 @@ class ucGaussianProcess(gandy.models.models.UncertaintyModel):
                 array of prediction uncertainties of targets withthe same
                 length as Xs
         """
-        print(self.model.__class__)
         if isinstance(self.model,
                       sklearn.gaussian_process.GaussianProcessRegressor):
             predictions, uncertainties = self.model.predict(
