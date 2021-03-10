@@ -19,7 +19,7 @@ import gandy.models.dcgan as dcgan
 import tensorflow as tf
 
 # typing imports
-from typing import Any, Object, Type
+from typing import Any, Object, Type, Callable
 
 # typing
 import numpy as np
@@ -65,35 +65,37 @@ class GAN(gandy.models.models.UncertaintyModel):
         # get noise shape from kwargs
         # default is 10 dimensional
         noise_shape = kwargs.get('noise_shape', (10,))
-        # get n_classes from kwargs
-        # default is the y dimension
-        # e.g., regression would be == 1
-        # This would also be correct for a one hot encoded y vector.
+        # get n_classes from kwargs, default None
         n_classes = kwargs.get('n_classes', None)
 
         # determine whether to use gan or conditional gan
         if n_classes is not None:
             # if number of classes is specified, assumes conditional GAN
             self.conditional = True
-            if len(self.yshape) == 2:
+            # Should this be flagged somewhere?...
+            if self.yshape[0] > 1:
                 # Ys are already one hot encoded
-                n_classes = kwargs.get('n_classes', self.yshape[1])
+                n_classes = kwargs.get('n_classes', self.yshape[0])
             else:
                 # Ys are NOT one hot encoded
+                # Or this is regression, which would be == 1
                 n_classes = kwargs.get('n_classes', self.yshape[0])
         else:
-            self.conditional = False
             # if no n_classes specified, assumed to be regression
             # and no need for conditional inputs
-            n_classes = kwargs.get('n_classes', self.yshape[0])
+            self.conditional = False
+
+        # get other kwargs as hyperparameters
+        hyperparams = {key: kwargs[key] for key in kwargs.keys() -
+                       {'n_classes', 'noise_shape'}}
 
         # instantiating the model as the deepchem gan
         if self.conditional:
             model = dcgan.CondDCGAN(self.xshape, self.yshape, noise_shape,
-                                    n_classes=n_classes, **kwargs)
+                                    n_classes, hyperparams)
         else:
-            model = dcgan.DCGAN(self.xshape, self.yshape,
-                                noise_shape, **kwargs)
+            model = dcgan.DCGAN(self.xshape, self.yshape, noise_shape,
+                                n_classes, hyperparams)
         return model
 
     def generate_data(self,
@@ -174,7 +176,8 @@ class GAN(gandy.models.models.UncertaintyModel):
     def _train(self,
                Xs: Array,
                Ys: Array,
-               *args,
+               *args,  # use args thoughtfully?
+               metric: Callable = None,
                **kwargs) -> Any:
         """
         Train GAN model on data.
@@ -199,6 +202,7 @@ class GAN(gandy.models.models.UncertaintyModel):
         # and discriminator are self.model.outputs
         # This is a list of 2 KerasTensors so must evaluate it.
         losses = self.model.outputs
+        # compute metric
         return losses
 
     # overridden method from UncertaintyModel class
