@@ -38,10 +38,7 @@ import gandy.models.models
 # Typing
 Model = Type[gandy.models.models.UncertaintyModel]
 Array = Type[numpy.ndarray]
-Trial = Type[optuna.trials.Trial]
-
-# class to specify optuna search space from python readable inputs
-
+Trial = Type[optuna.trial.Trial]
 
 class SearchableSpace:
     """Wrapper to convert user specified search space into Optuna readable
@@ -67,6 +64,81 @@ class SearchableSpace:
         # pseudocode
         # . if statement format of space
         #      set self.func, self.args, and self.hypname
+        self.name = hypname
+        
+        # categorical
+        if type(space) == list:
+            self.args = (space)
+            self.func = optuna.trial.Trial.suggest_categorical
+        # others
+        elif type(space) == tuple:
+            # check if we need to add a parameter to the end (len =2)
+            if len(space) == 2:
+                if all(type(i) == int for i in space):
+                    space_ = list(space)
+                    space_.append(1)
+                    space_ = tuple(space_)
+                    print(
+                        'Assuming uniform integer sampling for hyperparameter\
+ {} with search space specified as Tuple[int] with len 2'.format(hypname)
+                    )
+                elif all(type(i) == float for i in space):
+                    space_ = list(space)
+                    space_.append('uniform')
+                    space_ = tuple(space_)
+                    print(
+                        'Assuming uniform continuous sampling for\
+ hyperparameter {} with search space specified as Tuple[float] with\
+  len 2'.format(hypname)
+                    )
+                else:
+                    raise ValueError('hyperparameter space as tuple must have\
+ the first two arguments be both float or integer')
+                    
+            elif len(space) == 3:
+                space_ = space
+            else:
+                raise ValueError(
+                    'space as a tuple indicates (min, max, step/type) and\
+ should have 2 or 3 contents, not {}'.format(len(space)))
+            
+            if type(space_[0]) != type(space_[1]):
+                raise ValueError('hyperparameter space as tuple must have\
+ the first two arguments be both float or integer')
+            # integer choice
+            elif type(space_[0]) == int:
+                if type(space_[2]) != int:
+                    raise ValueError('First two values in space are int,\
+ indicating integer selection, but the third (step size) is not an int')
+                else:
+                    pass
+                self.args = space_
+                self.func = optuna.trial.Trial.suggest_int
+            elif type(space_[0]) == float:
+                if space_[2] == 'uniform':
+                    self.args = space_[:2]
+                    self.func = optuna.trial.Trial.suggest_uniform
+                elif space_[2] == 'loguniform':
+                    self.args = space_[:2]
+                    self.func = optuna.trial.Trial.suggest_loguniform
+                elif type(space_[2]) == float:
+                    self.args = space_
+                    self.func = optuna.trial.Trial.suggest_discrete_uniform
+                else:
+                    raise ValueError(
+                        'Unknown specification for float suggestion {}, should\
+ be "uniform" or "loguniform" indicating the distribution, or a float,\
+  indicating a discrete spep'
+                    )
+                    
+            else:
+                raise ValueError('hyperparameter space as tuple must have\
+ the first two arguments be both float or integer')
+            
+        else:
+            raise TypeError(
+                'space must be a list or tuple, not {}'.format(type(space))
+            )
         return
 
 
