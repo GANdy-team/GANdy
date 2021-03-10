@@ -1,4 +1,4 @@
-# GANdy
+# GANdy [![Build Status](https://travis-ci.org/GANdy-team/GANdy.svg?branch=main)](https://travis-ci.org/GANdy-team/GANdy)
 Automatically creating and comparing supervised machine learning models capable of returning uncertainty estimates in addition to predictions.
 
 __Current Functionality__:
