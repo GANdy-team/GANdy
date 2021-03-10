@@ -6,8 +6,6 @@ import unittest.mock as mock
 import gandy.models.gans as gans
 import gandy.models.models
 
-import tensorflow as tf
-
 
 class TestGAN(unittest.TestCase):
     """Test GAN class."""
