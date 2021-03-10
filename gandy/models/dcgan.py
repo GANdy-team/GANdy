@@ -55,17 +55,17 @@ class DCGAN(deepchem.models.GAN):
         self.noise_shape = noise_shape
         self.n_classes = n_classes
 
-        Base_hyperparams = {layer_dimensions: [128],
-                            dropout: 0.05,
-                            activation: 'relu',
-                            use_bias: True,
-                            kernel_initializer: "glorot_uniform",
-                            bias_initializer: "zeros",
-                            kernel_regularizer: 'l2',
-                            bias_regularizer: None,
-                            activity_regularizer: None,
-                            kernel_constraint: None,
-                            bias_constraint: None}
+        Base_hyperparams = dict(layer_dimensions = [128],
+                                dropout = 0.05,
+                                activation = 'relu',
+                                use_bias = True,
+                                kernel_initializer = "glorot_uniform",
+                                bias_initializer = "zeros",
+                                kernel_regularizer = 'l2',
+                                bias_regularizer = None,
+                                activity_regularizer = None,
+                                kernel_constraint = None,
+                                bias_constraint = None)
 
         # Create separate hyperparam dictionaries for the generator
         # and discriminator
@@ -151,17 +151,17 @@ class DCGAN(deepchem.models.GAN):
         # construct input
         noise_in = Input(shape=self.get_noise_input_shape())
         # build first layer of network
-        gen = Dense(layer_dimensions[0], layer_kwargs)(noise_in)
+        gen = Dense(layer_dimensions[0], **layer_kwargs)(noise_in)
         # adding dropout to the weights
         gen = Dropout(dropout)(gen)
         # build subsequent layers
         for layer_dim in layer_dimensions[1:]:
-            gen = Dense(layer_dim, layer_kwargs)(gen)
+            gen = Dense(layer_dim, **layer_kwargs)(gen)
             gen = Dropout(dropout)(gen)
 
         # generator outputs
         # is xhape[0] really what we want, or batch size?
-        gen = Dense(self.xshape[0], layer_kwargs)(gen)
+        gen = Dense(self.xshape[0], **layer_kwargs)(gen)
         gen = Dropout(dropout)(gen)
 
         # final construction of Keras model
@@ -226,19 +226,19 @@ class DCGAN(deepchem.models.GAN):
         # construct input
         data_in = Input(shape=self.xshape)
         # build first layer of network
-        discrim = Dense(layer_dimensions[0], layer_kwargs)(data_in)
+        discrim = Dense(layer_dimensions[0], **layer_kwargs)(data_in)
         # adding dropout to the weights
         discrim = Dropout(dropout)(discrim)
         # build subsequent layers
         for layer_dim in layer_dimensions[1:]:
-            discrim = Dense(layer_dim, layer_kwargs)(discrim)
+            discrim = Dense(layer_dim, **layer_kwargs)(discrim)
             discrim = Dropout(dropout)(discrim)
 
         # To maintain the interpretation of a probability,
         # the final activation function is not a kwarg
         final_layer_kwargs = layer_kwargs.copy()
         final_layer_kwargs[activation] = 'sigmoid'
-        discrim_prob = Dense(1, final_layer_kwargs)(discrim)
+        discrim_prob = Dense(1, **final_layer_kwargs)(discrim)
 
         # final construction of Keras model
         discriminator = tf.keras.Model(inputs=[data_in],
@@ -340,16 +340,16 @@ class CondDCGAN(DCGAN):
         gen_input = Concatenate()([noise_in, conditional_in])
 
         # build first layer of network
-        gen = Dense(layer_dimensions[0], layer_kwargs)(gen_input)
+        gen = Dense(layer_dimensions[0], **layer_kwargs)(gen_input)
         # adding dropout to the weights
         gen = Dropout(dropout)(gen)
         # build subsequent layers
         for layer_dim in layer_dimensions[1:]:
-            gen = Dense(layer_dim, layer_kwargs)(gen)
+            gen = Dense(layer_dim, **layer_kwargs)(gen)
             gen = Dropout(dropout)(gen)
 
         # generator outputs
-        gen = Dense(self.xshape[0], layer_kwargs)(gen)
+        gen = Dense(self.xshape[0], **layer_kwargs)(gen)
         gen = Dropout(dropout)(gen)
 
         # final construction of Keras model
@@ -417,19 +417,19 @@ class CondDCGAN(DCGAN):
         discrim_input = Concatenate()([data_in, conditional_in])
 
         # build first layer of network
-        discrim = Dense(layer_dimensions[0], layer_kwargs)(discrim_input)
+        discrim = Dense(layer_dimensions[0], **layer_kwargs)(discrim_input)
         # adding dropout to the weights
         discrim = Dropout(dropout)(discrim)
         # build subsequent layers
         for layer_dim in layer_dimensions[1:]:
-            discrim = Dense(layer_dim, layer_kwargs)(discrim)
+            discrim = Dense(layer_dim, **layer_kwargs)(discrim)
             discrim = Dropout(dropout)(discrim)
 
         # To maintain the interpretation of a probability,
         # the final activation function is not a kwarg
         final_layer_kwargs = layer_kwargs.copy()
         final_layer_kwargs[activation] = 'sigmoid'
-        discrim_prob = Dense(1, final_layer_kwargs)(discrim)
+        discrim_prob = Dense(1, **final_layer_kwargs)(discrim)
 
         # final construction of Keras model
         discriminator = tf.keras.Model(inputs=[data_in, conditional_in],
