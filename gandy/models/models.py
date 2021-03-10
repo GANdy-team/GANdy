@@ -11,7 +11,6 @@ ish building, training, predicting, and evaluateing.
 """
 
 # imports
-import inspect
 import time
 from typing import Tuple, Iterable, Any, Type, Callable, Union
 
@@ -32,8 +31,8 @@ class NotImplimented(Exception):
     """
 
     def __init__(self, inst):
-        self.message = """The `{}` method has not yet been implimented by
- this class: `{}`.""".format(inspect.stack()[1][3], inst.__class__)
+        self.message = """This method has not yet been implimented by
+ this class: `{}`.""".format(inst.__class__)
         super().__init__(self.message)
         return
 

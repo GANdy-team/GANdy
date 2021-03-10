@@ -19,7 +19,7 @@ import gandy.models.dcgan as dcgan
 import tensorflow as tf
 
 # typing imports
-from typing import Any, Object, Type, Callable
+from typing import Any, Type, Callable
 
 # typing
 import numpy as np
@@ -46,7 +46,7 @@ class GAN(gandy.models.models.UncertaintyModel):
     """
 
     # overridden method from UncertaintyModel class
-    def _build(self, **kwargs) -> Object:
+    def _build(self, **kwargs):
         """
         Construct the model.
 
@@ -60,7 +60,7 @@ class GAN(gandy.models.models.UncertaintyModel):
 
         Returns:
             model - Deepchem GAN model found in dcgan
-                type == Object
+                type == Keras model
         """
         # get noise shape from kwargs
         # default is 10 dimensional

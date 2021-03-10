@@ -10,7 +10,7 @@ import gandy.models.models
 # import tensorflow as tf
 
 # typing imports
-from typing import Any, Object, Type
+from typing import Any, Type
 
 # typing
 import numpy
