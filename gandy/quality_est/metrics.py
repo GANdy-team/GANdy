@@ -49,11 +49,11 @@ class Metric:
                 Optional argument which contains array of uncertainty values
                 generated from the uncertainty module
         '''
-        # psuedocode
-        # set self.predictions
-        # set self.real
-        # set self.uncertainties
-        # call calculate function within init: self.calculate()
+        self.predictions = predictions
+        self.real = real
+        self.uncertainties = uncertainties
+        self.calculate()
+
     def calculate(self, **kwargs):
         '''
         Empty calculate function
@@ -89,11 +89,12 @@ class MSE(Metric):
                     An array of MSE scores for each prediction
 
         '''
-    # pseudocode
-    # define mathematical formula for MSE calculation using self.args
-    # iteration over arrays likely, then plug into defined formula
-        MSE_value = None
-        MSE_values = None
+        MSE_value = np.square(np.subtract(self.real, self.predictions)).mean()
+        MSE_values = []
+        
+        for i in range(len(self.predictions)):
+            MSE_values.append((self.real[i] - self.predictions[i])**2)
+
         return MSE_value, MSE_values
 
 
