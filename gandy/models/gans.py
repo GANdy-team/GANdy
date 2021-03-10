@@ -11,7 +11,7 @@ See dcgan for the implemented deepchem GAN and conditional GAN.
 
 # gandy imports
 import gandy.models.models
-import gandy.metrics
+import gandy.quality_est.metrics
 
 # deep learning imports
 import deepchem
