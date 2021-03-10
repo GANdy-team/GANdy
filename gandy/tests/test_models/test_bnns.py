@@ -3,6 +3,7 @@ import unittest.mock
 
 import numpy
 import tensorflow as tf
+import tensorflow_probability as tfp
 
 import gandy.models.bnns
 
@@ -57,17 +58,18 @@ class TestBNN(unittest.TestCase):
 
         def callable_wo_log_prob():
             return
-        with self.assertRaises(TypeError):
+        with self.assertRaises(AttributeError):
             subject.negative_loglikelihood(numpy.array([1, 2]),
                                            callable_wo_log_prob)
         # expected success
         mocked_dist = unittest.mock.MagicMock()
+        mocked_dist.log_prob.return_value = 5.0
         subject.negative_loglikelihood('targets',
                                        mocked_dist)
         mocked_dist.log_prob.assert_called_with('targets')
 
         # ability to catch non float
-        mocked_dist.return_value = 'string'
+        mocked_dist.log_prob.return_value = 'string'
         with self.assertRaises(ValueError):
             subject.negative_loglikelihood('targets',
                                            mocked_dist)
@@ -79,73 +81,83 @@ class TestBNN(unittest.TestCase):
         We need to ensure the returned keras model is both compiled
         and built.
         """
+        x = numpy.array([[1, 2],
+                         [3, 4],
+                         [5, 6]])
         # start with default initialization
-        subject = gandy.models.bnns.BNN((5,), (1,))
+        subject = gandy.models.bnns.BNN((2,), (4,), train_size=len(x))
         self.assertTrue(isinstance(subject.model, tf.keras.Model))
         self.assertTrue(subject.model._compile_was_called)
         self.assertTrue(subject.model.built)
-        self.assertEqual(tuple(subject.model.input.shapes.as_list()),
+        self.assertEqual(tuple(subject.model.input.shape.as_list())[1:],
                          subject.xshape)
-        self.assertEqual(tuple(subject.model.output.shapes.as_list()),
-                         subject.yshape)
+        predict = subject.model.predict(x)
+        self.assertTrue(predict.shape == (3, 4))
+        out = subject.model(x)
+        self.assertTrue(isinstance(out, tfp.distributions.Distribution))
 
         # test keyword assignment
-        with unittest.mock.patch(
-            'tensorflow.keras.Sequential.compile'
-        ) as mocked_compile:
-            subject = gandy.models.bnns.BNN((5,), (1,),
-                                            optimizer='rms_prop',
-                                            metrics=['MSE'])
-            mocked_compile.assert_called_with(optimizer='rms_prop',
-                                              metrics=['MSE'])
+        subject = gandy.models.bnns.BNN((2,), (4,),
+                                        train_size=len(x),
+                                        optimizer='RMSProp')
+        self.assertTrue(isinstance(subject.model.optimizer,
+                                   tf.keras.optimizers.RMSprop))
+        subject = gandy.models.bnns.BNN((2,), (4,),
+                                        train_size=len(x),
+                                        optimizer=tf.keras.optimizers.RMSprop)
+        self.assertTrue(isinstance(subject.model.optimizer,
+                                   tf.keras.optimizers.RMSprop))
+        opt = tf.keras.optimizers.RMSprop()
+        subject = gandy.models.bnns.BNN(
+            (2,), (4,),
+            train_size=len(x),
+            optimizer=opt
+        )
+        self.assertTrue(subject.model.optimizer is opt)
         return
 
     def test__train(self):
         """We just want to call the host fit method"""
         Xs = 'Xs'
         Ys = 'Ys'
-        with unittest.mock.patch(
-            'tensorflow.keras.Sequential.fit'
-        ) as mocked_fit:
-            subject = gandy.models.bnns.BNN((5,), (1,))
-            subject._train(Xs, Ys, epochs=10)
-            mocked_fit.assert_called_with(Xs, Ys, epochs=10)
-            return
+        mocked_fit = unittest.mock.MagicMock(return_value='loss')
+        subject = gandy.models.bnns.BNN((5,), (1,), train_size=2)
+        subject.model.fit = mocked_fit
+        losses = subject._train(Xs, Ys, epochs=10)
+        mocked_fit.assert_called_with(Xs, Ys, epochs=10)
+        self.assertEqual(losses, 'loss')
+        return
 
     def test__predict(self):
         """Predict for a probabilistic BNN is just letting the tensors
         flow, make sure it is passed to input.
         """
-        subject = gandy.models.bnns.BNN((5,), (1,))
-        subject.model = unittest.mock.MagicMock()
+        subject = gandy.models.bnns.BNN((5,), (1,), train_size=2)
+        dists = unittest.mock.MagicMock()
+        subject._model = unittest.mock.MagicMock(return_value=dists)
         subject._predict('Xs')
         subject.model.assert_called_with('Xs')
+        dists.mean.assert_called()
+        dists.stddev.assert_called()
         return
 
     def test_save(self):
         """Save should just call keras save"""
-        with unittest.mock.patch(
-            'tensorflow.keras.Sequential.save'
-        ) as mocked_save:
-            subject = gandy.models.bnns.BNN((5,), (1,))
-            subject.save('filename')
-            mocked_save.assert_called_with('filename')
+        mocked_save = unittest.mock.MagicMock()
+        subject = gandy.models.bnns.BNN((5,), (1,), train_size=2)
+        subject.model.save = mocked_save
+        subject.save('filename')
+        mocked_save.assert_called_with('filename')
         return
 
     def test_load(self):
         """load needs to use keras load, but then also stick it into a gandy
         model with the correct shape
         """
-        model_mocked = unittest.mock.MagicMock()
-        model_mocked.input.shape.to_list.return_value = [5, ]
-        model_mocked.output.shape.to_list.return_value = [3, ]
         with unittest.mock.patch(
-            'tensorflow.keras.models.load',
-            return_value=model_mocked
+            'tensorflow.keras.models.load_model'
         ) as mocked_load:
             subject = gandy.models.bnns.BNN.load('filename')
-            self.assertTrue(isinstance(subject), gandy.models.bnns.BNN)
-            self.assertEqual(subject.xhsape, (5,))
-            self.assertEqual(subject.xhsape, (3,))
+            self.assertTrue(isinstance(subject, gandy.models.bnns.BNN))
             mocked_load.assert_called_with('filename')
         return
