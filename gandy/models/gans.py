@@ -46,7 +46,7 @@ class GAN(gandy.models.models.UncertaintyModel):
     """
 
     # overridden method from UncertaintyModel class
-    def _build(self, **kwargs):
+    def _build(self, *args, **kwargs):
         """
         Construct the model.
 
@@ -71,7 +71,7 @@ class GAN(gandy.models.models.UncertaintyModel):
         # determine whether to use gan or conditional gan
         if n_classes is not None:
             # if number of classes is specified, assumes conditional GAN
-            self.conditional = True
+            conditional = True
             # Should this be flagged somewhere?...
             if self.yshape[0] > 1:
                 # Ys are already one hot encoded
@@ -83,14 +83,14 @@ class GAN(gandy.models.models.UncertaintyModel):
         else:
             # if no n_classes specified, assumed to be regression
             # and no need for conditional inputs
-            self.conditional = False
+            conditional = False
 
         # get other kwargs as hyperparameters
         hyperparams = {key: kwargs[key] for key in kwargs.keys() -
                        {'n_classes', 'noise_shape'}}
 
         # instantiating the model as the deepchem gan
-        if self.conditional:
+        if conditional:
             model = dcgan.CondDCGAN(self.xshape, self.yshape, noise_shape,
                                     n_classes, hyperparams)
         else:
@@ -124,7 +124,7 @@ class GAN(gandy.models.models.UncertaintyModel):
         """
         # sample with replacement X, Y pairs of size batch_size
         n = len(Xs)
-        indices = np.random.randomint(0, high=n, size=(batch_size,))
+        indices = np.random.randint(0, high=n, size=(batch_size,))
         classes = Xs[indices]
         points = Ys[indices]
         return classes, points
