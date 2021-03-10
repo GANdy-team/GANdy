@@ -55,6 +55,7 @@ class DCGAN(deepchem.models.GAN):
         self.noise_shape = noise_shape
         self.n_classes = n_classes
 
+        # base hyperparameters for generator and discirminator
         Base_hyperparams = dict(layer_dimensions = [128],
                                 dropout = 0.05,
                                 activation = 'relu',
