@@ -17,7 +17,7 @@ import tensorflow as tf
 from tensorflow.keras.layers import Concatenate, Dense, Dropout, Input
 
 # typing imports
-from typing import Tuple, Object, Type
+from typing import Tuple, Type
 
 # more typing
 import numpy as np
@@ -282,7 +282,7 @@ class CondDCGAN(DCGAN):
         """
         return [(self.n_classes,)]
 
-    def create_generator(self) -> Object:
+    def create_generator(self):
         """
         Create the generator as a keras model.
 
@@ -358,7 +358,7 @@ class CondDCGAN(DCGAN):
                                    outputs=[gen])
         return generator
 
-    def create_discriminator(self) -> Object:
+    def create_discriminator(self):
         """
         Create the discriminator as a keras model.
 
