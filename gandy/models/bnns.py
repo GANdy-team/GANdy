@@ -10,7 +10,7 @@ import gandy.models.models
 # import tensorflow as tf
 
 # typing imports
-from typing import Tuple, Any, Object, Type
+from typing import Any, Object, Type
 
 # typing
 import numpy
@@ -165,6 +165,7 @@ class BNN(gandy.models.models.UncertaintyModel):
 
         # model = keras.Model(inputs=inputs, outputs=outputs)
         # model.compile(**kwargs)
+        model = None
         return model
 
     # overridden method from UncertaintyModel class
@@ -214,27 +215,27 @@ class BNN(gandy.models.models.UncertaintyModel):
         predictions, uncertainties = None, None
         return predictions, uncertainties
 
-        def _save(filename: str, **kwargs):
-            """Method defined by child to save the predictor.
+    def save(filename: str, **kwargs):
+        """Method defined by child to save the predictor.
 
-            Method must save into memory the object at self.model
+        Method must save into memory the object at self.model
 
-            Args:
-                filename (str):
-                    name of file to save model to
-            """
-            # call Keras save function
-            return None
+        Args:
+            filename (str):
+                name of file to save model to
+        """
+        # call Keras save function
+        return None
 
-        def _load(self, filename: str, **kwargs):
-            """Method defined by child to load a predictor into memory.
+    def load(self, filename: str, **kwargs):
+        """Method defined by child to load a predictor into memory.
 
-            Loads the object to be assigned to self.model.
+        Loads the object to be assigned to self.model.
 
-            Args:
-                filename (str):
-                    path of file to load
-            """
-            # call Keras.load function
-            model = None
-            return model
+        Args:
+            filename (str):
+                path of file to load
+        """
+        # call Keras.load function
+        model = None
+        return model
