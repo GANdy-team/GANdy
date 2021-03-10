@@ -1,10 +1,7 @@
 """Testing functions for UncertaintyModel gan class."""
 
-# import numpy as np
 import unittest
 import unittest.mock as mock
-
-# import deepchem
 
 import gandy.models.gans as gans
 import gandy.models.models

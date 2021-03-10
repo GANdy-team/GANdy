@@ -14,7 +14,7 @@ import warnings
 # deep learning imports
 import deepchem
 import tensorflow as tf
-from tf.keras.layers import Concatenate, Dense, Dropout, Input
+from tensorflow.keras.layers import Concatenate, Dense, Dropout, Input
 
 # typing imports
 from typing import Tuple, Object, Type
