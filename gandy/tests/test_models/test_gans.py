@@ -12,7 +12,7 @@ class TestGAN(unittest.TestCase):
 
     def test_inheritence(self):
         """Ensure the subclass class inherits from parent class."""
-        self.assertTrue(issubclass(gans.gan,
+        self.assertTrue(issubclass(gans.GAN,
                         gandy.models.models.UncertaintyModel))
 
     def test__build(self):
@@ -130,7 +130,7 @@ class TestGAN(unittest.TestCase):
         kwargs = dict(bacthes=1, batch_size=5)
         with mock.patch('deepchem.metrics.to_one_hot',
                         return_value='one_hot_classes') as mocked_one_hot:
-            result = list(subject.iterbacthes(Xs, Ys, **kwargs))
+            result = list(subject.iterbatches(Xs, Ys, **kwargs))
             subject.generate_data.assert_called_with(Xs, Ys, 5)
             expected_result = {subject._model.data_inputs[0]: 'points',
                                subject._model.conditional_inputs[0]:
@@ -178,7 +178,7 @@ class TestGAN(unittest.TestCase):
         """
         # test path save
         subject = gans.GAN(xshape=(4,), yshape=(2,), n_classes=10)
-        subject._model.save = mock.MagicMock('save')
+        subject._model.save = mock.MagicMock(name='save')
         subject.save('path')
         subject._model.save.assert_called_with('path')
         # test h5 save

@@ -34,7 +34,7 @@ class BNN(gandy.models.models.UncertaintyModel):
     https://keras.io/examples/keras_recipes/bayesian_neural_networks/
     for a guide to implementing a BNN with Keras.
     """
-
+            
     def prior(kernel_size, bias_size, dtype=None) -> Callable:
         '''
         Arguments:
