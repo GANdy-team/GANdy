@@ -56,17 +56,17 @@ class DCGAN(deepchem.models.GAN):
         self.n_classes = n_classes
 
         # base hyperparameters for generator and discirminator
-        Base_hyperparams = dict(layer_dimensions = [128],
-                                dropout = 0.05,
-                                activation = 'relu',
-                                use_bias = True,
-                                kernel_initializer = "glorot_uniform",
-                                bias_initializer = "zeros",
-                                kernel_regularizer = 'l2',
-                                bias_regularizer = None,
-                                activity_regularizer = None,
-                                kernel_constraint = None,
-                                bias_constraint = None)
+        Base_hyperparams = dict(layer_dimensions=[128],
+                                dropout=0.05,
+                                activation='relu',
+                                use_bias=True,
+                                kernel_initializer="glorot_uniform",
+                                bias_initializer="zeros",
+                                kernel_regularizer='l2',
+                                bias_regularizer=None,
+                                activity_regularizer=None,
+                                kernel_constraint=None,
+                                bias_constraint=None)
 
         # Create separate hyperparam dictionaries for the generator
         # and discriminator
@@ -238,7 +238,7 @@ class DCGAN(deepchem.models.GAN):
         # To maintain the interpretation of a probability,
         # the final activation function is not a kwarg
         final_layer_kwargs = layer_kwargs.copy()
-        final_layer_kwargs[activation] = 'sigmoid'
+        final_layer_kwargs.update(activation='sigmoid')
         discrim_prob = Dense(1, **final_layer_kwargs)(discrim)
 
         # final construction of Keras model
@@ -429,7 +429,7 @@ class CondDCGAN(DCGAN):
         # To maintain the interpretation of a probability,
         # the final activation function is not a kwarg
         final_layer_kwargs = layer_kwargs.copy()
-        final_layer_kwargs[activation] = 'sigmoid'
+        final_layer_kwargs.update(activation='sigmoid')
         discrim_prob = Dense(1, **final_layer_kwargs)(discrim)
 
         # final construction of Keras model
