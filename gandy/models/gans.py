@@ -71,31 +71,37 @@ class GAN(gandy.models.models.UncertaintyModel):
         # determine whether to use gan or conditional gan
         if n_classes is not None:
             # if number of classes is specified, assumes conditional GAN
-            conditional = True
+            self.conditional = True
             # Should this be flagged somewhere?...
-            if self.yshape[0] > 1:
+            if self.yshape[0] == n_classes:
                 # Ys are already one hot encoded
-                n_classes = kwargs.get('n_classes', self.yshape[0])
+                self.one_hot = False
             else:
                 # Ys are NOT one hot encoded
                 # Or this is regression, which would be == 1
-                n_classes = kwargs.get('n_classes', self.yshape[0])
+                if n_classes == 1:
+                    # this is regression!
+                    self.one_hot = False
+                else:
+                    # Ys are NOT one hot encoded, so we must convert them later
+                    self.one_hot = True
         else:
             # if no n_classes specified, assumed to be regression
             # and no need for conditional inputs
-            conditional = False
+            self.conditional = False
+            n_classes = kwargs.get('n_classes', self.yshape[0])
 
         # get other kwargs as hyperparameters
         hyperparams = {key: kwargs[key] for key in kwargs.keys() -
                        {'n_classes', 'noise_shape'}}
 
         # instantiating the model as the deepchem gan
-        if conditional:
+        if self.conditional:
             model = dcgan.CondDCGAN(self.xshape, self.yshape, noise_shape,
-                                    n_classes, hyperparams)
+                                    n_classes, **hyperparams)
         else:
             model = dcgan.DCGAN(self.xshape, self.yshape, noise_shape,
-                                n_classes, hyperparams)
+                                n_classes, **hyperparams)
         return model
 
     def generate_data(self,
@@ -125,14 +131,14 @@ class GAN(gandy.models.models.UncertaintyModel):
         # sample with replacement X, Y pairs of size batch_size
         n = len(Xs)
         indices = np.random.randint(0, high=n, size=(batch_size,))
-        classes = Xs[indices]
-        points = Ys[indices]
+        points = Xs[indices]
+        classes = Ys[indices]
         return classes, points
 
     def iterbatches(self,
                     Xs: Array,
                     Ys: Array,
-                    **kwargs):
+                    batches: int):
         """
         Function that creates batches of generated data.
 
@@ -144,39 +150,28 @@ class GAN(gandy.models.models.UncertaintyModel):
             Xs/Ys - training examples/targets
                 type == ndarray
 
-            **kwargs - Specify training hyperparameters
-                    batches - number of batches to train on
-                        type == int
-                    batch_size - number of data points in a batch
-                        type == int
+            batches - number of batches to train on
+                type == int
 
         Yields:
             batched_data - data split into batches
                 type == dict
         """
-        # get training hyperparamters from kwargs
-        batches = kwargs.get('batches', 50)
-        batch_size = kwargs.get('batch_size', 32)
-
         # training loop
         for i in range(batches):
-            classes, points = self.generate_data(Xs, Ys, batch_size)
-            if len(Ys.shape) == 2:
-                # Ys already one hot encoded
-                pass
-            else:
-                # must one hot encode Ys
+            classes, points = self.generate_data(Xs, Ys, self.model.batch_size)
+            if self.one_hot:
                 classes = deepchem.metrics.to_one_hot(classes,
                                                       self.model.n_classes)
-            batched_data = {self.data_inputs[0]: points,
-                            self.conditional_inputs[0]: classes}
+            batched_data = {self._model.data_inputs[0]: points,
+                            self._model.conditional_inputs[0]: classes}
             yield batched_data
 
     # overridden method from UncertaintyModel class
     def _train(self,
                Xs: Array,
                Ys: Array,
-               *args,  # use args thoughtfully?
+               batches: int = 50,
                metric: Callable = None,
                **kwargs) -> Any:
         """
@@ -195,20 +190,21 @@ class GAN(gandy.models.models.UncertaintyModel):
         """
         # train GAN on data
         # self.model = deepchem GAN instance
-        self._model.fit_gan(self.iterbatches(Xs, Ys, **kwargs))
+        self._model.fit_gan(self.iterbatches(Xs, Ys, batches))
         # The deepchem gan is a Keras model whose
         # outputs are [gen_loss, disrcim_loss].
         # Thus the final losses for the generator
         # and discriminator are self.model.outputs
         # This is a list of 2 KerasTensors so must evaluate it.
-        losses = self.model.outputs
+        # losses = self._model.outputs
+        losses = None
         # compute metric
         return losses
 
     # overridden method from UncertaintyModel class
     def _predict(self,
                  Xs: Array,
-                 *args,
+                 Ys: Array = None,
                  **kwargs):
         """
         Predict on Xs.
@@ -218,6 +214,10 @@ class GAN(gandy.models.models.UncertaintyModel):
                 type == ndarray
 
             **kwargs - keyword arguments for predicting
+                 num_predictions - number of predictions to make
+                 to sample uncertainties
+                     type == int
+                     deafult == 100
 
         Returns:
             predictions - array of predictions of targets with the same length
@@ -232,30 +232,24 @@ class GAN(gandy.models.models.UncertaintyModel):
         num_predictions = kwargs.get('num_predictions', 100)
         predictions = []
         if self.conditional:
-            Ys = kwargs.get('Ys', None)
             assert Ys is not None, "This is a cGAN.\
                 Must specify Ys (Ys=) to call predict."
-            if len(Ys.shape) == 2:
-                # assumes data is in bacthed form
-                # Ys already one hot encoded
-                one_hot_Ys = Ys
-            else:
+            if self.one_hot:
                 # must one hot encode Ys
-                one_hot_Ys = deepchem.metrics.to_one_hot(Ys,
-                                                         self.model.n_classes)
-                for i in range(num_predictions):
-                    # generate data with conditional inputs
-                    generated_points = self._model.predict_gan_generator(
-                        conditional_inputs=[one_hot_Ys])
-                    predictions.append(generated_points)
+                Ys = deepchem.metrics.to_one_hot(Ys, self.model.n_classes)
+            for i in range(num_predictions):
+                # generate data with conditional inputs
+                generated_points = self._model.predict_gan_generator(
+                    conditional_inputs=[Ys])
+                predictions.append(generated_points)
         else:
             for i in range(num_predictions):
                 generated_points = self._model.predict_gan_generator()
                 predictions.append(generated_points)
         # the above code generates points, but we need uncertainties as well
-        predictions = np.average(predictions, axis=1)
-        uncertainties = np.std(predictions, axis=1)
-        return predictions, uncertainties
+        preds = np.average(predictions, axis=0)
+        uncertainties = np.std(predictions, axis=0)
+        return preds, uncertainties
 
     def save(self, filename: str, **kwargs):
         """

@@ -46,8 +46,7 @@ class DCGAN(deepchem.models.GAN):
     """
 
     def __init__(self, xshape, yshape, noise_shape, n_classes, **kwargs):
-        """Deepchem init function + class atributes."""
-        super(DCGAN, self).__init__(**kwargs)
+        """Override deepchem init function."""
 
         # These should be set by the gandy model when _build is called.
         self.xshape = xshape
@@ -95,6 +94,9 @@ class DCGAN(deepchem.models.GAN):
             else:
                 warnings.warn(f"Incorrect key {key}.\
                     Must start with generator_ or discriminator_")
+
+        # Deepchem init function + class atributes.
+        super(DCGAN, self).__init__(**kwargs)
 
     def create_generator(self):
         """
@@ -260,7 +262,15 @@ class DCGAN(deepchem.models.GAN):
 
         This should be set by the gandy model when an build is called.
         """
-        return self.xshape
+        return [self.xshape]
+
+    def get_conditional_input_shapes(self) -> Array:
+        """
+        Return the shape of the conditional input.
+
+        This should be set by the gandy model when an build is called.
+        """
+        return [(self.n_classes,)]
 
 
 class CondDCGAN(DCGAN):
@@ -273,14 +283,6 @@ class CondDCGAN(DCGAN):
     conditional on the values of those inputs. They are referred
     to as "conditional inputs".
     """
-
-    def get_conditional_input_shapes(self) -> Array:
-        """
-        Return the shape of the conditional input.
-
-        This should be set by the gandy model when an build is called.
-        """
-        return [(self.n_classes,)]
 
     def create_generator(self):
         """
