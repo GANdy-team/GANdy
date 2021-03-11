@@ -306,162 +306,165 @@ class TestSubjectObjective(unittest.TestCase):
         return
 
 
-# class TestOptRoutine(unittest.TestCase):
-#     """User interface class"""
+class TestOptRoutine(unittest.TestCase):
+    """User interface class"""
 
-#     def test___init__(self):
-#         """proper saving of keyword arguments and data saving"""
-#         # failure case not correct model type
-#         with self.assertRaises(TypeError):
-#             subject = opt.OptRoutine(subject=opt.SearchableSpace,
-#                                      Xs=numpy.array([1, 2, 3]),
-#                                      Ys=numpy.array([1, 2, 3]),
-#                                      search_space={'hyp1': (1, 10),
-#                                                    'hyp2': ['a', 'b']},
-#                                      keyword=5)
-#         # failure case data not iterable
-#         with self.assertRaises(TypeError):
-#             subject = opt.OptRoutine(subject=gandy.models.models.
-#                                      UncertaintyModel,
-#                                      Xs='str',
-#                                      Ys=numpy.array([1, 2, 3]),
-#                                      search_space={'hyp1': (1, 10),
-#                                                    'hyp2': ['a', 'b']},
-#                                      keyword=5)
-#         with self.assertRaises(TypeError):
-#             subject = opt.OptRoutine(subject=gandy.models.models.
-#                                      UncertaintyModel,
-#                                      Xs=numpy.array([1, 2, 3]),
-#                                      Ys='str',
-#                                      search_space={'hyp1': (1, 10),
-#                                                    'hyp2': ['a', 'b']},
-#                                      keyword=5)
-#         # expected success
-#         subject = opt.OptRoutine(subject=gandy.models.models.
-#                                  UncertaintyModel,
-#                                  Xs=numpy.array([1, 2, 3]),
-#                                  Ys=numpy.array([1, 2, 3]),
-#                                  search_space={'hyp1': (1, 10),
-#                                                'hyp2': ['a', 'b']},
-#                                  keyword=5)
-#         self.assertTrue(subject.Xs is not None)
-#         self.assertTrue(subject.Ys is not None)
-#         self.assertTrue(self.subject == gandy.models.models.UncertaintyModel)
-#         self.assertEqual(subject.search_space, {'hyp1': (1, 10),
-#                                                 'hyp2': ['a', 'b']})
-#         self.assertTrue('keyword' in subject.all_kwargs.keys())
-#         return
+    def test___init__(self):
+        """proper saving of keyword arguments and data saving"""
+        # failure case not correct model type
+        with self.assertRaises(TypeError):
+            subject = opt.OptRoutine(subject=opt.SearchableSpace,
+                                     Xs=numpy.array([1, 2, 3]),
+                                     Ys=numpy.array([1, 2, 3]),
+                                     search_space={'hyp1': (1, 10),
+                                                   'hyp2': ['a', 'b']},
+                                     keyword=5)
+        # failure case data not iterable
+        with self.assertRaises(TypeError):
+            subject = opt.OptRoutine(subject=gandy.models.models.
+                                     UncertaintyModel,
+                                     Xs='str',
+                                     Ys=numpy.array([1, 2, 3]),
+                                     search_space={'hyp1': (1, 10),
+                                                   'hyp2': ['a', 'b']},
+                                     keyword=5)
+        with self.assertRaises(TypeError):
+            subject = opt.OptRoutine(subject=gandy.models.models.
+                                     UncertaintyModel,
+                                     Xs=numpy.array([1, 2, 3]),
+                                     Ys='str',
+                                     search_space={'hyp1': (1, 10),
+                                                   'hyp2': ['a', 'b']},
+                                     keyword=5)
+        # expected success
+        subject = opt.OptRoutine(subject=gandy.models.models.
+                                 UncertaintyModel,
+                                 Xs=numpy.array([1, 2, 3]),
+                                 Ys=numpy.array([1, 2, 3]),
+                                 search_space={'hyp1': (1, 10),
+                                               'hyp2': ['a', 'b']},
+                                 keyword=5)
+        self.assertTrue(subject.Xs is not None)
+        self.assertTrue(subject.Ys is not None)
+        self.assertTrue(subject.subject ==
+                        gandy.models.models.UncertaintyModel)
+        self.assertEqual(subject.search_space, {'hyp1': (1, 10),
+                                                'hyp2': ['a', 'b']})
+        self.assertTrue('keyword' in subject.all_kwargs.keys())
+        return
 
-#     @unittest.mock.patch('gandy.optimization.hypersearch.SearchableSpace')
-#     def test__set_param_space(self, mocked_SS):
-#         """proper parsing of dictionary into SearchableSpace objects"""
-#         mocked_SS.side_effect = ['ss1', 'ss2']
-#         subject = opt.OptRoutine(subject=gandy.models.models.
-#                                  UncertaintyModel,
-#                                  Xs=numpy.array([1, 2, 3]),
-#                                  Ys=numpy.array([1, 2, 3]),
-#                                  search_space={'hyp1': (1, 10),
-#                                                'hyp2': ['a', 'b']},
-#                                  keyword=5)
-#         subject._set_param_space()
-#         mocked_SS.assert_called_with('hyp2', ['a', 'b'])
-#         self.assertEqual(mocked_SS.call_count, 2)
-#         return
+    @unittest.mock.patch('gandy.optimization.hypersearch.SearchableSpace')
+    def test__set_param_space(self, mocked_SS):
+        """proper parsing of dictionary into SearchableSpace objects"""
+        mocked_SS.side_effect = ['ss1', 'ss2']
+        subject = opt.OptRoutine(subject=gandy.models.models.
+                                 UncertaintyModel,
+                                 Xs=numpy.array([1, 2, 3]),
+                                 Ys=numpy.array([1, 2, 3]),
+                                 search_space={'hyp1': (1, 10),
+                                               'hyp2': ['a', 'b']},
+                                 keyword=5)
+        subject._set_param_space()
+        mocked_SS.assert_called_with('hyp2', ['a', 'b'])
+        self.assertEqual(mocked_SS.call_count, 2)
+        return
 
-#     @unittest.mock.patch('gandy.optimization.hypersearch.SubjectObjective')
-#     def test__set_objective(self, mocked_objective):
-#         """ensure proper calling of SubjectObjective class"""
-#         mocked_objective.return_value = 'objective'
-#         subject = opt.OptRoutine(subject=gandy.models.models.
-#                                  UncertaintyModel,
-#                                  Xs=numpy.array([1, 2, 3]),
-#                                  Ys=numpy.array([1, 2, 3]),
-#                                  search_space={'hyp1': (1, 10),
-#                                                'hyp2': ['a', 'b']},
-#                                  keyword=5)
-#         mocked__set_param = unittest.mock.MagicMock()
-#         subject._set_param_space = mocked__set_param
-#         # set the objective
-#         subject._set_objective()
-#         mocked_objective.assert_called_with(subject.subject,
-#                                             subject.Xs,
-#                                             subject.Ys,
-#                                             **subject.all_kwargs)
-#         self.assertEqual(subject.objective, 'objective')
-#         mocked__set_param.assert_called()
-#         return
+    @unittest.mock.patch('gandy.optimization.hypersearch.SubjectObjective')
+    def test__set_objective(self, mocked_objective):
+        """ensure proper calling of SubjectObjective class"""
+        mocked_objective.return_value = 'objective'
+        subject = opt.OptRoutine(subject=gandy.models.models.
+                                 UncertaintyModel,
+                                 Xs=numpy.array([1, 2, 3]),
+                                 Ys=numpy.array([1, 2, 3]),
+                                 search_space={'hyp1': (1, 10),
+                                               'hyp2': ['a', 'b']},
+                                 keyword=5)
+        mocked__set_param = unittest.mock.MagicMock()
+        subject._set_param_space = mocked__set_param
+        # set the objective
+        subject._set_objective()
+        mocked_objective.assert_called_with(subject.subject,
+                                            subject.Xs,
+                                            subject.Ys,
+                                            **subject.all_kwargs)
+        self.assertEqual(subject.objective, 'objective')
+        mocked__set_param.assert_called()
+        return
 
-#     @unittest.mock.patch('optuna.create_study', return_value='study')
-#     def test__set_study(self, mocked_cstudy):
-#         """Can a study be correctly called and stored"""
-#         subject = opt.OptRoutine(subject=gandy.models.models.
-#                                  UncertaintyModel,
-#                                  Xs=numpy.array([1, 2, 3]),
-#                                  Ys=numpy.array([1, 2, 3]),
-#                                  search_space={'hyp1': (1, 10),
-#                                                'hyp2': ['a', 'b']},
-#                                  keyword=5)
-#         subject._set_study()
-#         self.assertTrue(subject.study == 'study')
-#         mocked_cstudy.assert_called_with(**subject.all_kwargs)
-#         return
+    @unittest.mock.patch('optuna.create_study', return_value='study')
+    def test__set_study(self, mocked_cstudy):
+        """Can a study be correctly called and stored"""
+        subject = opt.OptRoutine(subject=gandy.models.models.
+                                 UncertaintyModel,
+                                 Xs=numpy.array([1, 2, 3]),
+                                 Ys=numpy.array([1, 2, 3]),
+                                 search_space={'hyp1': (1, 10),
+                                               'hyp2': ['a', 'b']},
+                                 keyword=5)
+        subject._set_study()
+        self.assertTrue(subject.study == 'study')
+        mocked_cstudy.assert_called_with(**subject.all_kwargs)
+        return
 
-#     def test_optimize(self):
-#         """acceptance of kwargs and nested calls"""
-#         subject = opt.OptRoutine(subject=gandy.models.models.
-#                                  UncertaintyModel,
-#                                  Xs=numpy.array([1, 2, 3]),
-#                                  Ys=numpy.array([1, 2, 3]),
-#                                  keyword=5)
+    def test_optimize(self):
+        """acceptance of kwargs and nested calls"""
+        subject = opt.OptRoutine(subject=gandy.models.models.
+                                 UncertaintyModel,
+                                 Xs=numpy.array([1, 2, 3]),
+                                 Ys=numpy.array([1, 2, 3]),
+                                 keyword=5)
 
-#         # failure mode no seach space specified
-#         with self.assertRaises(AttributeError):
-#             subject.optimize()
+        # failure mode no seach space specified
+        with self.assertRaises(AttributeError):
+            subject.optimize()
 
-#         # set up mocked objects
-#         mocked_set_obj = unittest.mock.MagicMock()
-#         mocked_set_study = unittest.mock.MagicMock()
-#         mocked_study = unittest.mock.MagicMock()
-#         subject._set_objective = mocked_set_obj
-#         subject._set_study = mocked_set_study
-#         subject.study = mocked_study
+        # set up mocked objects
+        mocked_set_obj = unittest.mock.MagicMock()
+        mocked_obj = unittest.mock.MagicMock()
+        mocked_set_study = unittest.mock.MagicMock()
+        mocked_study = unittest.mock.MagicMock()
+        subject._set_objective = mocked_set_obj
+        subject.objective = mocked_obj
+        subject._set_study = mocked_set_study
+        subject.study = mocked_study
 
-#         # success case, set search space and pass new kwargs
-#         best_score = subject.optimize(search_space={'hyp1': (1, 10),
-#                                                     'hyp2': ['a', 'b']},
-#                                       keyword2=10)
-#         mocked_set_obj.assert_called()
-#         mocked_set_study.assert_called()
-#         mocked_study.assert_called_with(
-#             subject.objective, **subject.all_kwargs)
-#         self.assertTrue(best_score is mocked_study.best_trial.value)
-#         self.assertTrue(subject.best_params is mocked_study.\
-# best_trial.params)
-#         self.assertTrue('keyword2' in subject.all_kwargs.keys())
-#         return
+        # success case, set search space and pass new kwargs
+        best_score = subject.optimize(search_space={'hyp1': (1, 10),
+                                                    'hyp2': ['a', 'b']},
+                                      keyword2=10)
+        mocked_set_obj.assert_called()
+        mocked_set_study.assert_called()
+        mocked_study.optimize.assert_called_with(
+            subject.objective, **subject.all_kwargs)
+        self.assertTrue(best_score is mocked_study.best_value)
+        self.assertTrue(subject.best_params is mocked_study.
+                        best_params)
+        self.assertTrue('keyword2' in subject.all_kwargs.keys())
+        return
 
-#     @unittest.mock.patch('gandy.models.models.UncertaintyModel')
-#     def test_train_best(self, mocked_UM):
-#         """proper access of best params and training of a new instance"""
-#         mocked_UMin = unittest.mock.MagicMock()
-#         mocked_UM.return_value = mocked_UMin
-#         subject = opt.OptRoutine(subject=gandy.models.models.
-#                                  UncertaintyModel,
-#                                  Xs=numpy.array([1, 2, 3]),
-#                                  Ys=numpy.array([1, 2, 3]),
-#                                  search_space={'hyp1': (1, 10),
-#                                                'hyp2': ['a', 'b']},
-#                                  keyword=5)
-#         # failure no best params
-#         with self.assertRaises(AttributeError):
-#             subject.train_best()
-#         # set and run
-#         subject.best_params = {'a': 10}
-#         model = subject.train_best(keyword2=10)
-#         mocked_UM.assert_called_with(**subject.best_params,
-#                                      **subject.all_kwargs)
-#         mocked_UMin.fit.assert_called_with(**subject.best_params,
-#                                            **subject.all_kwargs)
-#         self.assertTrue(model is mocked_UMin)
-#         self.asserTrue('keyword2' in subject.all_kwargs.keys())
-#         return
+    def test_train_best(self):
+        """proper access of best params and training of a new instance"""
+        mocked_UM = unittest.mock.MagicMock()
+        mocked_UMin = unittest.mock.MagicMock()
+        mocked_UM.return_value = mocked_UMin
+        subject = opt.OptRoutine(subject=gandy.models.models.
+                                 UncertaintyModel,
+                                 Xs=numpy.array([1, 2, 3]),
+                                 Ys=numpy.array([1, 2, 3]),
+                                 search_space={'hyp1': (1, 10),
+                                               'hyp2': ['a', 'b']},
+                                 keyword=5)
+        subject.subject = mocked_UM
+        # failure no best params
+        with self.assertRaises(AttributeError):
+            subject.train_best()
+        # set and run
+        subject.best_params = {'a': 10}
+        model = subject.train_best()
+        mocked_UM.assert_called_with(**subject.best_params,
+                                     **subject.all_kwargs)
+        mocked_UMin.fit.assert_called_with(**subject.best_params,
+                                           **subject.all_kwargs)
+        self.assertTrue(model is mocked_UMin)
+        return

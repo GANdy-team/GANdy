@@ -342,7 +342,7 @@ class SubjectObjective:
 
                 trial.report(loss, session)
 
-                if trial.should_prune():
+                if trial.should_prune() is True:
                     raise optuna.exceptions.TrialPruned()
             return loss
 
@@ -355,7 +355,7 @@ class SubjectObjective:
                                               self.val_data)
                 trial.report(loss, session)
 
-                if trial.should_prune():
+                if trial.should_prune() is True:
                     raise optuna.exceptions.TrialPruned()
             return loss
 
@@ -373,7 +373,7 @@ class SubjectObjective:
                                               val_data)
                 trial.report(loss, session)
 
-                if trial.should_prune():
+                if trial.should_prune() is True:
                     raise optuna.exceptions.TrialPruned()
             return loss
 
@@ -503,6 +503,23 @@ class OptRoutine:
         # . set the class to self.subject
         # . set self the Xs and Ys data after taking values
         # . save all_kwargs
+        if not issubclass(subject, gandy.models.models.UncertaintyModel):
+            raise TypeError('subject must be an UncertaintyModel class')
+        else:
+            self.subject = subject
+
+        Xs = numpy.array(Xs)
+        Ys = numpy.array(Ys)
+        if not hasattr(Xs, '__len__') and hasattr(Ys, '__len__'):
+            raise TypeError('Passed data are not arrays (iterable)')
+        if len(Xs) != len(Ys):
+            raise ValueError('Passed data does not have the same length; \
+len(Xs) = {}, len(Ys) = {}'.format(len(Xs), len(Ys)))
+        self.Xs = Xs
+        self.Ys = Ys
+
+        self.search_space = search_space
+        self.all_kwargs = kwargs
         return
 
     def _set_param_space(self):
@@ -517,6 +534,12 @@ class OptRoutine:
         # . for loop self.param_space
         #     param_space = SearchableSpace class
         # set self._param_space
+        param_space = []
+        for k, v in self.search_space.items():
+            param_space.append(
+                SearchableSpace(k, v)
+            )
+        self.param_space = param_space
         return
 
     def _set_objective(self):
@@ -543,6 +566,19 @@ class OptRoutine:
 #                  **kwargs)
 
         # . set self.objective
+        if self.search_space is None:
+            raise AttributeError('Set search space, the desired hyperparameter\
+ space to search over according to SearchableSpace class')
+        else:
+            self._set_param_space()
+
+        objective = SubjectObjective(
+            self.subject,
+            self.Xs,
+            self.Ys,
+            **self.all_kwargs
+        )
+        self.objective = objective
         return
 
     def _set_study(self):
@@ -557,6 +593,8 @@ class OptRoutine:
         # pseudocode
         # . create study optuna.create_study
         # . set to self.study
+        study = optuna.create_study(**self.all_kwargs)
+        self.study = study
         return
 
     def optimize(self,
@@ -583,19 +621,27 @@ class OptRoutine:
         # . set optimizer, study with all kwargs
         # . set self.best_params
         # . get best_score
-        best_score = None
+        if search_space is not None:
+            self.search_space = search_space
+        else:
+            pass
+
+        self.all_kwargs.update(kwargs)
+
+        self._set_objective()
+        self._set_study()
+
+        self.study.optimize(self.objective, **self.all_kwargs)
+        best_score = self.study.best_value
+        self.best_params = self.study.best_params
         return best_score
 
-    def train_best(self, **kwargs) -> Model:
+    def train_best(self) -> Model:
         """Train the subject on the entire dataset with the best found
         parameters.
 
         Requires self.optimize to have been executed or best_params to have
         been specified.
-
-        Args:
-            **kwargs:
-                Keyword arguments to pass to the constructor and trainer
 
         Returns:
             best_model (UncertaintyModel):
@@ -604,9 +650,14 @@ class OptRoutine:
         """
         # pseudocode
         # . check best_params exist
-        # . update all kwargs
         # . Initiate model with  and best_params and kwargs
         # . train model with best_params training and kwargs
         # . set self.best_model
-        best_model = None
+        if not hasattr(self, 'best_params'):
+            raise AttributeError('No best parameters found, run the optimizer')
+        else:
+            pass
+
+        best_model = self.subject(**self.best_params, **self.all_kwargs)
+        best_model.fit(**self.best_params, **self.all_kwargs)
         return best_model
