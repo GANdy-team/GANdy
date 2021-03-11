@@ -28,10 +28,12 @@ incorporates the studied subject and the chosen hyperparameters search spaces
 """
 
 # imports
-from typing import Tuple, Iterable, Type, List, Union
+from typing import Tuple, Iterable, Type, List, Union, Callable
 
-import optuna
 import numpy
+import optuna.trial
+import optuna
+import sklearn.model_selection
 
 import gandy.models.models
 
@@ -39,6 +41,7 @@ import gandy.models.models
 Model = Type[gandy.models.models.UncertaintyModel]
 Array = Type[numpy.ndarray]
 Trial = Type[optuna.trial.Trial]
+
 
 class SearchableSpace:
     """Wrapper to convert user specified search space into Optuna readable
@@ -65,16 +68,16 @@ class SearchableSpace:
         # . if statement format of space
         #      set self.func, self.args, and self.hypname
         self.name = hypname
-        
+
         # categorical
-        if type(space) == list:
-            self.args = (space)
+        if isinstance(space, list):
+            self.args = (space,)
             self.func = optuna.trial.Trial.suggest_categorical
         # others
-        elif type(space) == tuple:
+        elif isinstance(space, tuple):
             # check if we need to add a parameter to the end (len =2)
             if len(space) == 2:
-                if all(type(i) == int for i in space):
+                if all(isinstance(i, int) for i in space):
                     space_ = list(space)
                     space_.append(1)
                     space_ = tuple(space_)
@@ -82,7 +85,7 @@ class SearchableSpace:
                         'Assuming uniform integer sampling for hyperparameter\
  {} with search space specified as Tuple[int] with len 2'.format(hypname)
                     )
-                elif all(type(i) == float for i in space):
+                elif all(isinstance(i, float) for i in space):
                     space_ = list(space)
                     space_.append('uniform')
                     space_ = tuple(space_)
@@ -94,34 +97,34 @@ class SearchableSpace:
                 else:
                     raise ValueError('hyperparameter space as tuple must have\
  the first two arguments be both float or integer')
-                    
+
             elif len(space) == 3:
                 space_ = space
             else:
                 raise ValueError(
                     'space as a tuple indicates (min, max, step/type) and\
  should have 2 or 3 contents, not {}'.format(len(space)))
-            
-            if type(space_[0]) != type(space_[1]):
+
+            if not isinstance(space_[0], type(space_[1])):
                 raise ValueError('hyperparameter space as tuple must have\
  the first two arguments be both float or integer')
             # integer choice
-            elif type(space_[0]) == int:
-                if type(space_[2]) != int:
+            elif isinstance(space_[0], int):
+                if not isinstance(space_[2], int):
                     raise ValueError('First two values in space are int,\
  indicating integer selection, but the third (step size) is not an int')
                 else:
                     pass
                 self.args = space_
                 self.func = optuna.trial.Trial.suggest_int
-            elif type(space_[0]) == float:
+            elif isinstance(space_[0], float):
                 if space_[2] == 'uniform':
                     self.args = space_[:2]
                     self.func = optuna.trial.Trial.suggest_uniform
                 elif space_[2] == 'loguniform':
                     self.args = space_[:2]
                     self.func = optuna.trial.Trial.suggest_loguniform
-                elif type(space_[2]) == float:
+                elif isinstance(space_[2], float):
                     self.args = space_
                     self.func = optuna.trial.Trial.suggest_discrete_uniform
                 else:
@@ -130,11 +133,11 @@ class SearchableSpace:
  be "uniform" or "loguniform" indicating the distribution, or a float,\
   indicating a discrete spep'
                     )
-                    
+
             else:
                 raise ValueError('hyperparameter space as tuple must have\
  the first two arguments be both float or integer')
-            
+
         else:
             raise TypeError(
                 'space must be a list or tuple, not {}'.format(type(space))
@@ -183,7 +186,7 @@ class SubjectObjective:
                  param_space: list,
                  sessions: Union[int, List[str]] = None,
                  k: Union[int, tuple] = None,
-                 val_data: Tuple[Array] = None,
+                 val_data: Iterable[Array] = None,
                  val_frac: float = None,
                  **kwargs):
         # pseudocode
@@ -192,6 +195,60 @@ class SubjectObjective:
         # . make sure only one of k, val_data, val_frac
         # . test input type
         # . set self attributes in proper form
+        for param in param_space:
+            if param.name in kwargs.keys():
+                raise ValueError(
+                    'Whoa! A searchable parameter {} is also passed as a\
+ keyword argument. A parameter cannot be both searched and stationary.\
+ '.format(param.name)
+                )
+            else:
+                pass
+
+        self.kwargs = kwargs
+        self.param_space = param_space
+        self.subject = subject
+
+        # store data
+        if len(Xs) != len(Ys):
+            raise ValueError('Data should be the same length')
+        self.Xs = Xs
+        self.Ys = Ys
+
+        # check only one argument passed
+        passed = [i is not None for i in [k, val_data, val_frac]]
+        if numpy.sum(passed) > 1:
+            raise ValueError('Only one k, val_data, val_frac acceptable')
+        elif numpy.sum(passed) == 0:
+            val_frac = 0.2
+        else:
+            pass
+
+        if k is not None:
+            self.k = k
+        else:
+            self._k = None
+        if val_data is not None:
+            self.val_data = val_data
+        else:
+            self._val_data = None
+        if val_frac is not None:
+            self.val_frac = val_frac
+        else:
+            self._val_frac = None
+
+        if isinstance(sessions, int):
+            self.sessions = range(sessions)
+        elif isinstance(sessions, list):
+            self.sessions = sessions
+        elif sessions is None:
+            self.sessions = range(1)
+        else:
+            raise TypeError(
+                'sessions should be a list of names or an integer number,\
+ not {}'.format(type(sessions))
+            )
+
         return
 
     def _sample_params(self, trial: Trial) -> dict:
@@ -210,10 +267,15 @@ class SubjectObjective:
         """
         # pseudocode
         # . hyparams = dict loop self.param_space trial.method(args)
-        hyparams = None
+        hyparams = {}
+        for param in self.param_space:
+            print(param.func)
+            hyparams[param.name] = param.func(trial, param.name, *param.args)
+        print(hyparams)
         return hyparams
 
     def _execute_instance(self,
+                          instance: Callable,
                           hyparams: dict,
                           train_data: Tuple[Array],
                           val_data: Tuple[Array]) -> float:
@@ -235,7 +297,8 @@ class SubjectObjective:
         # . construct model with hyparms and self kwargs
         # . train model with hyparms and self kwargs
         # . score model with self kwargs
-        single_loss = None
+        instance.train(*train_data, **self.kwargs, **hyparams)
+        single_loss = instance.score(*val_data, **self.kwargs, **hyparams)
         return single_loss
 
     def __call__(self, trial: Trial) -> float:
@@ -256,8 +319,63 @@ class SubjectObjective:
         # .    split data based on above
         # .    for each session, execute instances
         # .    check for prune
-        loss = None
-        return loss
+        hyparams = self._sample_params(trial)
+
+        if self.k is not None:
+            # need k instances
+            instances = [
+                self.subject(**self.kwargs, **hyparams) for i in self.k
+            ]
+            for session in self.sessions:
+                losses = []
+                for fold, instance in enumerate(instances):
+                    train_data = (self.Xs[self.k[fold][0]],
+                                  self.Ys[self.k[fold][0]])
+                    val_data = (self.Xs[self.k[fold][1]],
+                                self.Ys[self.k[fold][1]])
+                    single_loss = self._execute_instance(instance,
+                                                         hyparams,
+                                                         train_data,
+                                                         val_data)
+                    losses.append(single_loss)
+                loss = numpy.mean(losses)
+
+                trial.report(loss, session)
+
+                if trial.should_prune():
+                    raise optuna.exceptions.TrialPruned()
+            return loss
+
+        if self.val_data is not None:
+            instance = self.subject(**self.kwargs, **hyparams)
+            for session in self.sessions:
+                loss = self._execute_instance(instance,
+                                              hyparams,
+                                              (self.Xs, self.Ys),
+                                              self.val_data)
+                trial.report(loss, session)
+
+                if trial.should_prune():
+                    raise optuna.exceptions.TrialPruned()
+            return loss
+
+        if self.val_frac is not None:
+            instance = self.subject(**self.kwargs, **hyparams)
+            Xt, Xv, Yt, Yv = sklearn.model_selection.train_test_split(
+                self.Xs, self.Ys, test_size=self.val_frac
+            )
+            train_data = (Xt, Yt)
+            val_data = (Xv, Yv)
+            for session in self.sessions:
+                loss = self._execute_instance(instance,
+                                              hyparams,
+                                              train_data,
+                                              val_data)
+                trial.report(loss, session)
+
+                if trial.should_prune():
+                    raise optuna.exceptions.TrialPruned()
+            return loss
 
     @property
     def k(self):
@@ -268,13 +386,28 @@ class SubjectObjective:
     def k(self, new_k):
         # if int convert to indexes
         # otherwise check proper form
+        if not isinstance(new_k, int):
+            for inds in new_k:
+                if len(inds) != 2:
+                    raise ValueError(
+                        'k if not an integer of no. folds, should be an\
+ iterable of fold idexes (train ind, test ind). {} does not have the correct\
+  format of Iterable of len(2) iterables'.format(new_k)
+                    )
+        else:
+            kfold = sklearn.model_selection.KFold(new_k, shuffle=True)
+            new_k = kfold.split(self.Xs)
+            new_k = list(new_k)
         self._k = new_k
+        del self.val_data
+        del self.val_frac
         return
 
     @k.deleter
     def k(self):
         self._k = None
         # print message
+        print('Cannot have more than one k, val_data, val_frac. Deleting k')
         return
 
     @property
@@ -285,13 +418,27 @@ class SubjectObjective:
     @val_data.setter
     def val_data(self, new_val_data):
         # check tuple of array
+        if len(new_val_data) != 2:
+            raise ValueError(
+                'val_data should be an iterable of len 2, x and y data arrays'
+            )
+        else:
+            for d in new_val_data:
+                if not hasattr(d, "__len__"):
+                    raise ValueError('One object passed in val_data not iter')
+            if len(new_val_data[0]) != len(new_val_data[1]):
+                raise ValueError('val_data x, y different lengths')
         self._val_data = new_val_data
+        del self.k
+        del self.val_frac
         return
 
     @val_data.deleter
     def val_data(self):
         self._val_data = None
         # print message
+        print('Cannot have more than one k, val_data, val_frac. \
+ Deleting val_data')
         return
 
     @property
@@ -303,12 +450,22 @@ class SubjectObjective:
     @val_frac.setter
     def val_frac(self, new_val_frac):
         # check float
+        try:
+            new_val_frac = float(new_val_frac)
+        except BaseException:
+            raise TypeError('Cannot convert {} to float'.format(new_val_frac))
+        if not 0.0 < new_val_frac < 1.0:
+            raise ValueError('val_frac must be between 0 and 1')
         self._val_frac = new_val_frac
+        del self.k
+        del self.val_data
         return
 
     @val_frac.deleter
     def val_frac(self):
         self._val_frac = None
+        print('Cannot have more than one k, val_data, val_frac.\
+ Deleting val_frac')
         return
 
 
