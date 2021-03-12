@@ -1,5 +1,4 @@
 """Unit tests for Metrics module"""
-
 import unittest
 import unittest.mock
 
@@ -49,7 +48,7 @@ class TestMetric(unittest.TestCase):
         # ensure calculate method is called using mock function
         subject = metrics.Metric
         subject.calculate = unittest.mock.MagicMock(name='calculate')
-        subject.calculate.assert_called_once_with(kwargs)
+        subject.calculate.assert_called_once_with()
 
 
 class TestMSE(unittest.TestCase):
@@ -60,18 +59,18 @@ class TestMSE(unittest.TestCase):
 
         # failure case: data not iterable
         with self.assertRaises(TypeError):
-            subject = metric.MSE(predictions="0, 1, 2",
-                                 real=np.array([0, 1, 2]))
+            subject = metrics.MSE(predictions="0, 1, 2",
+                                  real=np.array([0, 1, 2]))
 
         with self.assertRaises(TypeError):
-            subject = metric.MSE(predictions=np.array([0, 1, 2]),
-                                 real="0, 1, 2")
+            subject = metrics.MSE(predictions=np.array([0, 1, 2]),
+                                  real="0, 1, 2")
 
         # failure case: uncertainties given when None expected
         with self.assertRaises(TypeError):
-            subject = metric.MSE(predictions=np.array([0, 1, 2]),
-                                 real=np.array([0, 1, 2]),
-                                 uncertainties=np.array([0, 1, 2]))
+            subject = metrics.MSE(predictions=np.array([0, 1, 2]),
+                                  real=np.array([0, 1, 2]),
+                                  uncertainties=np.array([0, 1, 2]))
 
         # check to make sure necessary attributes are inputted
         subject = metrics.MSE(predictions=np.array([0, 1, 2]),
@@ -93,18 +92,18 @@ class TestRMSE(unittest.TestCase):
 
         # failure case: data not iterable
         with self.assertRaises(TypeError):
-            subject = metric.RMSE(predictions="0, 1, 2",
-                                  real=np.array([0, 1, 2]))
+            subject = metrics.RMSE(predictions="0, 1, 2",
+                                   real=np.array([0, 1, 2]))
 
         with self.assertRaises(TypeError):
-            subject = metric.RMSE(predictions=np.array([0, 1, 2]),
-                                  real="0, 1, 2")
+            subject = metrics.RMSE(predictions=np.array([0, 1, 2]),
+                                   real="0, 1, 2")
 
         # failure case: uncertainties given when None expected
-         with self.assertRaises(TypeError):
-            subject = metric.RMSE(predictions=np.array([0, 1, 2]),
-                                  real=np.array([0, 1, 2]),
-                                  uncertainties=np.array([0, 1, 2]))
+        with self.assertRaises(TypeError):
+            subject = metrics.RMSE(predictions=np.array([0, 1, 2]),
+                                   real=np.array([0, 1, 2]),
+                                   uncertainties=np.array([0, 1, 2]))
 
         # check to make sure necessary attributes are inputted
         subject = metrics.RMSE(predictions=np.array([0, 1, 2]),
@@ -126,23 +125,23 @@ class TestF1(unittest.TestCase):
 
         # failure case: data not iterable
         with self.assertRaises(TypeError):
-            subject = metric.F1(predictions="0, 1, 2",
-                                real=np.array([0, 1, 2]))
+            subject = metrics.F1(predictions="0, 1, 2",
+                                 real=np.array([0, 1, 2]))
 
         with self.assertRaises(TypeError):
-            subject = metric.F1(predictions=np.array([0, 1, 2]),
-                                real="0, 1, 2")
-    
-        # failure case: uncertainties given when None expected 
-        with self.assertRaises(TypeError):
-            subject = metric.F1(predictions=np.array([0, 1, 2]),
-                                real=np.array([0, 1, 2]),
-                                uncertainties=np.array([0, 1, 2]))
+            subject = metrics.F1(predictions=np.array([0, 1, 2]),
+                                 real="0, 1, 2")
 
-       # check to make sure necessary attributes are inputted
+        # failure case: uncertainties given when None expected
+        with self.assertRaises(TypeError):
+            subject = metrics.F1(predictions=np.array([0, 1, 2]),
+                                 real=np.array([0, 1, 2]),
+                                 uncertainties=np.array([0, 1, 2]))
+
+        # check to make sure necessary attributes are inputted
         subject = metrics.F1(predictions=np.array([0, 1, 2]),
                              real=np.array([0, 1, 2]))
-    
+
         self.assertTrue(subject.predictions is not None)
         self.assertTrue(subject.real is not None)
         self.assertTrue(subject.uncertainties is None)
