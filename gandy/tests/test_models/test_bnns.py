@@ -94,7 +94,7 @@ class TestBNN(unittest.TestCase):
         # test keyword assignment
         subject = gandy.models.bnns.BNN((2,), (4,),
                                         train_size=len(x),
-                                        optimizer='RMSProp')
+                                        optimizer='RMSprop')
         self.assertTrue(isinstance(subject.model.optimizer,
                                    tf.keras.optimizers.RMSprop))
         subject = gandy.models.bnns.BNN((2,), (4,),
