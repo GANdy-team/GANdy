@@ -138,7 +138,7 @@ class RMSE(Metric):
         RMSE_value = np.sqrt(np.mean(np.subtract(self.real, self.predictions)
                                      **2))
 
-        # Define MSE_values as a list of RMSE deviations between data points
+        # Define RMSE_values as a list of RMSE deviations between data points
         RMSE_values = []
 
         for i in range(len(self.predictions)):
