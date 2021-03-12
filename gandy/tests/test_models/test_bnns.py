@@ -19,7 +19,7 @@ class TestBNN(unittest.TestCase):
         """
         kernel_size = 5
         bias_size = 5
-        subject = gandy.models.bnns.BNN((1,), (1,))
+        subject = gandy.models.bnns.BNN((1,), (1,), train_size=5)
         # expected success must return a model
         prior = subject.prior(kernel_size, bias_size)
         self.assertTrue(isinstance(prior, tf.keras.Model))
@@ -37,7 +37,7 @@ class TestBNN(unittest.TestCase):
         """
         kernel_size = 5
         bias_size = 5
-        subject = gandy.models.bnns.BNN((1,), (1,))
+        subject = gandy.models.bnns.BNN((1,), (1,), train_size=5)
         # expected success must return a model
         prior = subject.posterior(kernel_size, bias_size)
         self.assertTrue(isinstance(prior, tf.keras.Model))
@@ -53,7 +53,7 @@ class TestBNN(unittest.TestCase):
 
         Distribution should impliment log_prob method
         """
-        subject = gandy.models.bnns.BNN((1,), (1,))
+        subject = gandy.models.bnns.BNN((1,), (1,), train_size=5)
         # failure mode, does not have method
 
         def callable_wo_log_prob():
