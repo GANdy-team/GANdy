@@ -172,5 +172,5 @@ class F1(Metric):
                         Value of the F1 score computed
 
          '''
-        F1_value = f1_score(self.real, self.predictions, **kwargs)
+        F1_value = f1_score(self.real, self.predictions)
         return F1_value
