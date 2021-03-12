@@ -17,7 +17,7 @@ input data provided.
 # Imports
 from typing import Type, Tuple
 
-from sklearn.metrics import f1_score
+from sklearn.metrics import f1_score, accuracy_score
 
 import numpy as np
 
@@ -150,7 +150,7 @@ class RMSE(Metric):
 
 class F1(Metric):
     '''
-    F1 score class which defines the structure used forcomputing the F1 score
+    F1 score class which defines the structure used for computing the F1 score
     between the passed in datasets. Inherets the properties of the parent
     class Metrics.
     '''
@@ -158,7 +158,7 @@ class F1(Metric):
     def calculate(self, **kwargs) -> float:
         '''
         Method that defines the mathematical formula necessary to compute
-        the RMSE.
+        the F1 score.
 
             Args:
 
@@ -172,5 +172,32 @@ class F1(Metric):
                         Value of the F1 score computed
 
          '''
-        F1_value = f1_score(self.real, self.predictions)
+        F1_value = f1_score(self.real, self.predictions, average = 'macro')
         return F1_value
+
+class Accuracy(Metric):
+    '''
+    Accuracy class which defines the structure used for computing the
+    accuracy score between the passed in datasets. Inherets the properties of
+    the parent class Metrics.
+    '''
+
+    def calculate(self, **kwargs) -> float:
+        '''
+        Method that defines the mathematical formula necessary to compute
+        the Accuracy.
+
+            Args:
+
+                **kwargs:
+                    Necessary keyword arguments to be passed into calculate()
+                    method
+
+                Returns:
+
+                    Accuracy_value(float):
+                        Value of the Accuracy score computed
+
+         '''
+        Accuracy_value = accuracy_score(self.real, self.predictions)
+        return Accuracy_value
