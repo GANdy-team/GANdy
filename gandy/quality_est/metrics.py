@@ -17,7 +17,7 @@ input data provided.
 # Imports
 from typing import Type, Tuple
 
-from sklearn import f1_score
+from sklearn.metrics import f1_score
 
 import numpy as np
 
