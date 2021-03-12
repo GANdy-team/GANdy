@@ -55,7 +55,7 @@ class TestMSE(unittest.TestCase):
     """Unit test for MSE subclass"""
 
     def test_calculate(self):
-        """Test the calculate function within the parent Metric class"""
+        """Test the calculate function within the MSE subclass"""
 
         # failure case: data not iterable
         with self.assertRaises(TypeError):
@@ -88,7 +88,7 @@ class TestRMSE(unittest.TestCase):
     """Unit test for RMSE subclass"""
 
     def test_calculate(self):
-        """Test the calculate function within the parent Metric class"""
+        """Test the calculate function within the RMSE subclass"""
 
         # failure case: data not iterable
         with self.assertRaises(TypeError):
@@ -121,7 +121,7 @@ class TestF1(unittest.TestCase):
     """Unit test for F1 subclass"""
 
     def test_calculate(self):
-        """Test the calculate function within the parent Metric class"""
+        """Test the calculate function within the F1 subclass"""
 
         # failure case: data not iterable
         with self.assertRaises(TypeError):
