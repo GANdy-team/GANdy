@@ -141,18 +141,13 @@ class BNN(gandy.models.models.UncertaintyModel):
         except AttributeError:
             raise AttributeError('Passed distribution does not have the\
  log_prob method')
-        if not isinstance(nll, float):
-            raise ValueError(
-                'the returned value should be a float, not {}'.format(type(nll)
-                                                                      )
-            )
         return -nll
 
     # overridden method from UncertaintyModel class
     def _build(self,
                train_size: int,
                task_type: str = 'regression',
-               activation: Union[Callable, str] = 'relu',
+               activation: Union[Callable, str] = 'sigmoid',
                optimizer: Union[Callable, str] = 'adam',
                neurons: Tuple[int] = (12, 12, 12),
                metrics=['MSE'],
@@ -282,6 +277,7 @@ class BNN(gandy.models.models.UncertaintyModel):
     def _train(self,
                Xs: Array,
                Ys: Array,
+               metric: Callable = None,
                *args,
                **kwargs) -> Any:
         '''

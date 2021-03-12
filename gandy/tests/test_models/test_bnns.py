@@ -68,11 +68,6 @@ class TestBNN(unittest.TestCase):
                                        mocked_dist)
         mocked_dist.log_prob.assert_called_with('targets')
 
-        # ability to catch non float
-        mocked_dist.log_prob.return_value = 'string'
-        with self.assertRaises(ValueError):
-            subject.negative_loglikelihood('targets',
-                                           mocked_dist)
         return
 
     def test__build(self):
