@@ -18,5 +18,6 @@ def create_data(to_csv = True):
 	if to_csv:
 		dataframe = pd.DataFrame({'Y':y, 'X1':x1, 'X2':x2})
 		dataframe.to_csv("test_data.csv", index=False, sep = ',')
+		gen_data = pd.read_csv('test_data.csv')
 
-	return x1, x2, y
+	return gen_data
