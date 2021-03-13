@@ -66,42 +66,19 @@ class GAN(gandy.models.models.UncertaintyModel):
         # default is 10 dimensional
         noise_shape = kwargs.get('noise_shape', (10,))
         # get n_classes from kwargs, default None
-        n_classes = kwargs.get('n_classes', None)
-
-        # determine whether to use gan or conditional gan
-        if n_classes is not None:
-            # if number of classes is specified, assumes conditional GAN
-            self.conditional = True
-            # Should this be flagged somewhere?...
-            if self.yshape[0] == n_classes:
-                # Ys are already one hot encoded
-                self.one_hot = False
-            else:
-                # Ys are NOT one hot encoded
-                # Or this is regression, which would be == 1
-                if n_classes == 1:
-                    # this is regression!
-                    self.one_hot = False
-                else:
-                    # Ys are NOT one hot encoded, so we must convert them later
-                    self.one_hot = True
-        else:
-            # if no n_classes specified, assumed to be regression
-            # and no need for conditional inputs
-            self.conditional = False
-            n_classes = kwargs.get('n_classes', self.yshape[0])
+        self.conditional = kwargs.get('conditional', True)
 
         # get other kwargs as hyperparameters
         hyperparams = {key: kwargs[key] for key in kwargs.keys() -
-                       {'n_classes', 'noise_shape'}}
+                       {'noise_shape'}}
 
         # instantiating the model as the deepchem gan
         if self.conditional:
             model = dcgan.CondDCGAN(self.xshape, self.yshape, noise_shape,
-                                    n_classes, **hyperparams)
+                                    **hyperparams)
         else:
             model = dcgan.DCGAN(self.xshape, self.yshape, noise_shape,
-                                n_classes, **hyperparams)
+                                **hyperparams)
         return model
 
     def generate_data(self,
@@ -131,9 +108,9 @@ class GAN(gandy.models.models.UncertaintyModel):
         # sample with replacement X, Y pairs of size batch_size
         n = len(Xs)
         indices = np.random.randint(0, high=n, size=(batch_size,))
-        points = Xs[indices]
-        classes = Ys[indices]
-        return classes, points
+        features = Xs[indices]
+        targets = Ys[indices]
+        return targets, features
 
     def iterbatches(self,
                     Xs: Array,
@@ -159,12 +136,9 @@ class GAN(gandy.models.models.UncertaintyModel):
         """
         # training loop
         for i in range(batches):
-            classes, points = self.generate_data(Xs, Ys, self.model.batch_size)
-            if self.one_hot:
-                classes = deepchem.metrics.to_one_hot(classes,
-                                                      self.model.n_classes)
-            batched_data = {self._model.data_inputs[0]: points,
-                            self._model.conditional_inputs[0]: classes}
+            targets, features = self.generate_data(Xs, Ys, self.model.batch_size)
+            batched_data = {self._model.conditional_inputs[0]: features,
+                            self._model.data_inputs[0]: targets}
             yield batched_data
 
     # overridden method from UncertaintyModel class
@@ -190,21 +164,17 @@ class GAN(gandy.models.models.UncertaintyModel):
         """
         # train GAN on data
         # self.model = deepchem GAN instance
-        self._model.fit_gan(self.iterbatches(Xs, Ys, batches))
-        # The deepchem gan is a Keras model whose
-        # outputs are [gen_loss, disrcim_loss].
-        # Thus the final losses for the generator
-        # and discriminator are self.model.outputs
-        # This is a list of 2 KerasTensors so must evaluate it.
-        # losses = self._model.outputs
-        losses = None
-        # compute metric
+        # generator + discriminator losses
+        losses = self._model.fit_gan(self.iterbatches(Xs, Ys, batches))
+        # compute metric here
+        if metric is not None:
+            losses[0] = metric(losses[0])  # gen
+            losses[1] = metric(losses[1])  # discrim
         return losses
 
     # overridden method from UncertaintyModel class
     def _predict(self,
                  Xs: Array,
-                 Ys: Array = None,
                  **kwargs):
         """
         Predict on Xs.
@@ -229,18 +199,14 @@ class GAN(gandy.models.models.UncertaintyModel):
                 type == ndarray
         """
         # adapted from deepchem tutorial 14:
+
         num_predictions = kwargs.get('num_predictions', 100)
         predictions = []
         if self.conditional:
-            assert Ys is not None, "This is a cGAN.\
-                Must specify Ys (Ys=) to call predict."
-            if self.one_hot:
-                # must one hot encode Ys
-                Ys = deepchem.metrics.to_one_hot(Ys, self.model.n_classes)
             for i in range(num_predictions):
                 # generate data with conditional inputs
                 generated_points = self._model.predict_gan_generator(
-                    conditional_inputs=[Ys])
+                    conditional_inputs=[Xs])
                 predictions.append(generated_points)
         else:
             for i in range(num_predictions):
@@ -263,12 +229,10 @@ class GAN(gandy.models.models.UncertaintyModel):
             filename (str):
                 name of file to save model to
         """
-        # save model aka generator and discriminator separately
-        if filename.endswith('.h5'):
-            self._model.save(filename)
-        else:
-            path_to_model = filename
-            self._model.save(path_to_model)
+        # save model
+        # filename could be a path or end with .h5
+        print(f"Saving model as {filename}")
+        self._model.save(filename)
         return None
 
     @classmethod
@@ -290,4 +254,12 @@ class GAN(gandy.models.models.UncertaintyModel):
         else:
             path_to_model = filename
             model = tf.keras.model.load_model(path_to_model)
+        # get x and y shape
+        xshape = None
+        yshape = None
+        # instantiate
+        instance = cls.__new__(cls)
+        instance._xshape = xshape
+        instance._yshape = yshape
+        instance._model = model
         return model

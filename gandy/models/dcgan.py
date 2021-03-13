@@ -8,6 +8,9 @@ https://github.com/deepchem/deepchem/blob/master/examples/tutorials/
 
 """
 
+# time
+import time
+
 # warnings
 import warnings
 
@@ -45,14 +48,12 @@ class DCGAN(deepchem.models.GAN):
     This class builds off of the deepchem GAN class found at the url above.
     """
 
-    def __init__(self, xshape, yshape, noise_shape, n_classes, **kwargs):
+    def __init__(self, xshape, yshape, noise_shape, **kwargs):
         """Override deepchem init function."""
-
         # These should be set by the gandy model when _build is called.
         self.xshape = xshape
         self.yshape = yshape
         self.noise_shape = noise_shape
-        self.n_classes = n_classes
 
         # base hyperparameters for generator and discirminator
         Base_hyperparams = dict(layer_dimensions=[128],
@@ -163,8 +164,7 @@ class DCGAN(deepchem.models.GAN):
             gen = Dropout(dropout)(gen)
 
         # generator outputs
-        # is xhape[0] really what we want, or batch size?
-        gen = Dense(self.xshape[0], **layer_kwargs)(gen)
+        gen = Dense(self.yshape[0], **layer_kwargs)(gen)
         gen = Dropout(dropout)(gen)
 
         # final construction of Keras model
@@ -227,7 +227,7 @@ class DCGAN(deepchem.models.GAN):
                         - {'layer_dimensions', 'dropout'}}
 
         # construct input
-        data_in = Input(shape=self.xshape)
+        data_in = Input(shape=self.yshape)
         # build first layer of network
         discrim = Dense(layer_dimensions[0], **layer_kwargs)(data_in)
         # adding dropout to the weights
@@ -248,6 +248,132 @@ class DCGAN(deepchem.models.GAN):
                                        outputs=[discrim_prob])
         return discriminator
 
+    def fit_gan(self,
+                batches,
+                generator_steps=1.0,
+                max_checkpoints_to_keep=5,
+                checkpoint_interval=1000,
+                restore=False):
+        """Train this model on data.
+
+        !! Adjusted from deepchem to return losses !!
+
+        Parameters
+        ----------
+        batches: iterable
+            batches of data to train the discriminator on, each
+            represented as a dict that maps Inputs to values.
+            It should specify values for all members of
+            data_inputs and conditional_inputs.
+        generator_steps: float
+            the number of training steps to perform for the generator
+            for each batch. This can be used to adjust the ratio of
+            training steps for the generator and discriminator.
+            For example, 2.0 will perform two training steps for
+            every batch, while 0.5 will only perform one training step
+            for every two batches.
+        max_checkpoints_to_keep: int
+            the maximum number of checkpoints to keep.
+            Older checkpoints are discarded.
+        checkpoint_interval: int
+            the frequency at which to write checkpoints, measured in
+            batches. Set this to 0 to disable automatic checkpointing.
+        restore: bool
+            if True, restore the model from the most recent checkpoint before
+            training it.
+        """
+        self._ensure_built()
+        gen_train_fraction = 0.0
+        discrim_error = 0.0
+        gen_error = 0.0
+        discrim_average_steps = 0
+        gen_average_steps = 0
+        time1 = time.time()
+
+        # Added HERE
+        model_losses = [[], []]
+
+        if checkpoint_interval > 0:
+            manager = tf.train.CheckpointManager(self._checkpoint,
+                                                 self.model_dir,
+                                                 max_checkpoints_to_keep)
+        for feed_dict in batches:
+            # Every call to fit_generator() will increment global_step,
+            # but we only want it to get incremented once for the entire
+            # batch, so record the value and keep resetting it.
+
+            global_step = self.get_global_step()
+
+            # Train the discriminator.
+
+            inputs = [self.get_noise_batch(self.batch_size)]
+            for input in self.data_input_layers:
+                inputs.append(feed_dict[input.ref()])
+            for input in self.conditional_input_layers:
+                inputs.append(feed_dict[input.ref()])
+            discrim_error += self.fit_generator(
+                [(inputs, [], [])],
+                variables=self.discrim_variables,
+                loss=self.discrim_loss_fn,
+                checkpoint_interval=0,
+                restore=restore)
+            restore = False
+            discrim_average_steps += 1
+
+            # Train the generator.
+
+            if generator_steps > 0.0:
+                gen_train_fraction += generator_steps
+                while gen_train_fraction >= 1.0:
+                    inputs = [self.get_noise_batch(
+                              self.batch_size)] + inputs[1:]
+                    gen_error += self.fit_generator(
+                        [(inputs, [], [])],
+                        variables=self.gen_variables,
+                        checkpoint_interval=0)
+                    gen_average_steps += 1
+                    gen_train_fraction -= 1.0
+            self._global_step.assign(global_step + 1)
+
+            # Write checkpoints and report progress.
+
+            if discrim_average_steps == checkpoint_interval:
+                manager.save()
+                discrim_loss = discrim_error / max(1, discrim_average_steps)
+                gen_loss = gen_error / max(1, gen_average_steps)
+                print(
+                    f'Step {global_step+1}: \t' +
+                    f'Avg gen loss {gen_loss}, \t' +
+                    f'Avg discrim loss {discrim_loss}')
+                discrim_error = 0.0
+                gen_error = 0.0
+                discrim_average_steps = 0
+                gen_average_steps = 0
+
+                # Added HERE
+                model_losses[0].append(gen_loss)
+                model_losses[1].append(discrim_loss)
+
+        # Write out final results.
+
+        if checkpoint_interval > 0:
+            if discrim_average_steps > 0 and gen_average_steps > 0:
+                discrim_loss = discrim_error / discrim_average_steps
+                gen_loss = gen_error / gen_average_steps
+                print(
+                    f'Step {global_step+1}: \t' +
+                    f'Avg gen loss {gen_loss}, \t' +
+                    f'Avg discrim loss {discrim_loss}')
+            manager.save()
+            time2 = time.time()
+            print("TIMING: model fitting took %0.3f s" % (time2 - time1))
+
+            model_losses[0].append(gen_loss)
+            model_losses[1].append(discrim_loss)
+
+        # ADDED Here
+        return model_losses
+
     def get_noise_input_shape(self) -> Tuple[int]:
         """
         Return the shape of the noise vector.
@@ -261,16 +387,20 @@ class DCGAN(deepchem.models.GAN):
         Return the shape of the data.
 
         This should be set by the gandy model when an build is called.
+
+        Data input shape is y!
         """
-        return [self.xshape]
+        return [self.yshape]
 
     def get_conditional_input_shapes(self) -> Array:
         """
         Return the shape of the conditional input.
 
         This should be set by the gandy model when an build is called.
+
+        This is x data!
         """
-        return [(self.n_classes,)]
+        return [(self.xshape[0],)]
 
 
 class CondDCGAN(DCGAN):
@@ -339,7 +469,7 @@ class CondDCGAN(DCGAN):
 
         # construct input
         noise_in = Input(shape=self.get_noise_input_shape())
-        conditional_in = Input(shape=(self.n_classes,))
+        conditional_in = Input(shape=self.xshape)
         gen_input = Concatenate()([noise_in, conditional_in])
 
         # build first layer of network
@@ -352,7 +482,7 @@ class CondDCGAN(DCGAN):
             gen = Dropout(dropout)(gen)
 
         # generator outputs
-        gen = Dense(self.xshape[0], **layer_kwargs)(gen)
+        gen = Dense(self.yshape[0], **layer_kwargs)(gen)
         gen = Dropout(dropout)(gen)
 
         # final construction of Keras model
@@ -415,8 +545,8 @@ class CondDCGAN(DCGAN):
                         - {'layer_dimensions', 'dropout'}}
 
         # construct input
-        data_in = Input(shape=self.xshape)
-        conditional_in = Input(shape=(self.n_classes,))
+        data_in = Input(shape=self.yshape)
+        conditional_in = Input(shape=self.xshape,)
         discrim_input = Concatenate()([data_in, conditional_in])
 
         # build first layer of network
