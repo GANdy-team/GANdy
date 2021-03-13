@@ -17,7 +17,7 @@ import warnings
 # deep learning imports
 import deepchem
 import tensorflow as tf
-from tensorflow.keras.layers import Concatenate, Dense, Dropout, Input
+from tensorflow.keras.layers import Concatenate, Dense, Dropout, Input, LeakyReLU
 
 # typing imports
 from typing import Tuple, Type
@@ -56,8 +56,9 @@ class DCGAN(deepchem.models.GAN):
         self.noise_shape = noise_shape
 
         # base hyperparameters for generator and discirminator
-        Base_hyperparams = dict(layer_dimensions=[128],
-                                dropout=0.05,
+
+        Base_hyperparams = dict(layer_dimensions=[32, 32],
+                                dropout=0.1,
                                 activation='relu',
                                 use_bias=True,
                                 kernel_initializer="glorot_uniform",
@@ -164,8 +165,9 @@ class DCGAN(deepchem.models.GAN):
             gen = Dropout(dropout)(gen)
 
         # generator outputs
-        gen = Dense(self.yshape[0], **layer_kwargs)(gen)
-        gen = Dropout(dropout)(gen)
+        final_layer_kwargs = layer_kwargs.copy()
+        final_layer_kwargs.update(activation='sigmoid')
+        gen = Dense(self.yshape[0], **final_layer_kwargs)(gen)
 
         # final construction of Keras model
         generator = tf.keras.Model(inputs=[noise_in],
@@ -225,16 +227,20 @@ class DCGAN(deepchem.models.GAN):
         # every other kwarg is for the layers
         layer_kwargs = {key: kwargs[key] for key in kwargs.keys()
                         - {'layer_dimensions', 'dropout'}}
+        # removing activation to implemetn LeakyReLU
+        layer_kwargs.update(activation=None)
 
         # construct input
         data_in = Input(shape=self.yshape)
         # build first layer of network
         discrim = Dense(layer_dimensions[0], **layer_kwargs)(data_in)
+        discrim = LeakyReLU()(discrim)
         # adding dropout to the weights
         discrim = Dropout(dropout)(discrim)
         # build subsequent layers
         for layer_dim in layer_dimensions[1:]:
             discrim = Dense(layer_dim, **layer_kwargs)(discrim)
+            discrim = LeakyReLU()(discrim)
             discrim = Dropout(dropout)(discrim)
 
         # To maintain the interpretation of a probability,
@@ -482,8 +488,9 @@ class CondDCGAN(DCGAN):
             gen = Dropout(dropout)(gen)
 
         # generator outputs
-        gen = Dense(self.yshape[0], **layer_kwargs)(gen)
-        gen = Dropout(dropout)(gen)
+        final_layer_kwargs = layer_kwargs.copy()
+        final_layer_kwargs.update(activation='sigmoid')
+        gen = Dense(self.yshape[0], **final_layer_kwargs)(gen)
 
         # final construction of Keras model
         generator = tf.keras.Model(inputs=[noise_in, conditional_in],
@@ -543,6 +550,8 @@ class CondDCGAN(DCGAN):
         # every other kwarg is for the layers
         layer_kwargs = {key: kwargs[key] for key in kwargs.keys()
                         - {'layer_dimensions', 'dropout'}}
+        # removing activation to implemetn LeakyReLU
+        layer_kwargs.update(activation=None)
 
         # construct input
         data_in = Input(shape=self.yshape)
@@ -551,11 +560,13 @@ class CondDCGAN(DCGAN):
 
         # build first layer of network
         discrim = Dense(layer_dimensions[0], **layer_kwargs)(discrim_input)
+        discrim = LeakyReLU()(discrim)
         # adding dropout to the weights
         discrim = Dropout(dropout)(discrim)
         # build subsequent layers
         for layer_dim in layer_dimensions[1:]:
             discrim = Dense(layer_dim, **layer_kwargs)(discrim)
+            discrim = LeakyReLU()(discrim)
             discrim = Dropout(dropout)(discrim)
 
         # To maintain the interpretation of a probability,

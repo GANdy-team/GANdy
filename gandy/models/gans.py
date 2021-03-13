@@ -14,7 +14,6 @@ import gandy.models.models
 import gandy.quality_est.metrics
 
 # deep learning imports
-import deepchem
 import gandy.models.dcgan as dcgan
 import tensorflow as tf
 
@@ -136,7 +135,8 @@ class GAN(gandy.models.models.UncertaintyModel):
         """
         # training loop
         for i in range(batches):
-            targets, features = self.generate_data(Xs, Ys, self.model.batch_size)
+            targets, features = self.generate_data(Xs, Ys,
+                                                   self.model.batch_size)
             batched_data = {self._model.conditional_inputs[0]: features,
                             self._model.data_inputs[0]: targets}
             yield batched_data
