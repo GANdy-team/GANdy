@@ -67,12 +67,6 @@ class TestMSE(unittest.TestCase):
             subject = metrics.MSE(predictions=np.array([0, 1, 2]),
                                   real="0, 1, 2")
 
-        # failure case: uncertainties given when None expected
-        with self.assertRaises(TypeError):
-            subject = metrics.MSE(predictions=[0, 1, 2],
-                                  real=np.array([0, 1, 2]),
-                                  uncertainties=np.array([0, 1, 2]))
-
         # check to make sure necessary attributes are inputted
         subject = metrics.MSE(predictions=np.array([0, 1, 2]),
                               real=np.array([0, 1, 2]))
@@ -100,12 +94,6 @@ class TestRMSE(unittest.TestCase):
             subject = metrics.RMSE(predictions=np.array([0, 1, 2]),
                                    real="0, 1, 2")
 
-        # failure case: list given when numpy array expected
-        with self.assertRaises(TypeError):
-            subject = metrics.RMSE(predictions=[0, 1, 2],
-                                   real=np.array([0, 1, 2]),
-                                   uncertainties=np.array([0, 1, 2]))
-
         # check to make sure necessary attributes are inputted
         subject = metrics.RMSE(predictions=np.array([0, 1, 2]),
                                real=np.array([0, 1, 2]))
@@ -125,23 +113,44 @@ class TestF1(unittest.TestCase):
         """Test the calculate function within the F1 subclass"""
 
         # failure case: data not iterable
-        with self.assertRaises(ValueError):
+        with self.assertRaises(TypeError):
             subject = metrics.F1(predictions="0, 1, 2",
                                  real=np.array([0, 1, 2]))
 
-        with self.assertRaises(ValueError):
+        with self.assertRaises(TypeError):
             subject = metrics.F1(predictions=np.array([0, 1, 2]),
                                  real="0, 1, 2")
-
-        # failure case: uncertainties given when None expected
-        with self.assertRaises(ValueError):
-            subject = metrics.F1(predictions=[0, 1, 2],
-                                 real=np.array([0, 1, 2]),
-                                 uncertainties=np.array([0, 1, 2]))
 
         # check to make sure necessary attributes are inputted
         subject = metrics.F1(predictions=np.array([0, 1, 2]),
                              real=np.array([0, 1, 2]))
+
+        self.assertTrue(subject.predictions is not None)
+        self.assertTrue(subject.real is not None)
+        self.assertTrue(subject.uncertainties is None)
+
+        # check to make sure output is correct type
+        self.assertTrue(isinstance(subject, (float, int)))
+
+
+class TestAccuracy(unittest.TestCase):
+    """Unit test for Accuracy subclass"""
+
+    def test_calculate(self):
+        """Test the calculate function within the Accuracy subclass"""
+
+        # failure case: data not iterable
+        with self.assertRaises(TypeError):
+            subject = metrics.Accuracy(predictions="0, 1, 2",
+                                 real=np.array([0, 1, 2]))
+
+        with self.assertRaises(TypeError):
+            subject = metrics.Accuracy(predictions=np.array([0, 1, 2]),
+                                 real="0, 1, 2")
+
+        # check to make sure necessary attributes are inputted
+        subject = metrics.Accuracy(predictions=np.array([0, 1, 2]),
+                                   real=np.array([0, 1, 2]))
 
         self.assertTrue(subject.predictions is not None)
         self.assertTrue(subject.real is not None)
