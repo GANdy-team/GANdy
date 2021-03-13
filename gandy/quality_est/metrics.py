@@ -92,16 +92,21 @@ class MSE(Metric):
                     An array of MSE scores for each prediction
 
         '''
-        # Define MSE formula using numpy methods
-        MSE_value = np.mean(np.square(np.subtract(self.real, self.predictions)
-                                      ))
+        if self.uncertainties is not None:
+            raise TypeError("MSE metric does not take uncertainties as arg")
 
-        # Define MSE_values as a list of MSE deviations between each data point
-        MSE_values = []
+        else:
+            # Define MSE formula using numpy methods
+            MSE_value = np.mean(np.square(np.subtract(self.real, self.
+                                                      predictions)))
 
-        # Iterate through data points and add MSE value to list
-        for i in range(len(self.predictions)):
-            MSE_values.append((self.real[i] - self.predictions[i])**2)
+            # Define MSE_values as a list of MSE deviations between each data
+            # point
+            MSE_values = []
+
+            # Iterate through data points and add MSE value to list
+            for i in range(len(self.predictions)):
+                MSE_values.append((self.real[i] - self.predictions[i])**2)
 
         return MSE_value, MSE_values
 
@@ -133,17 +138,20 @@ class RMSE(Metric):
                     Array of RMSE values for each prediction
 
          '''
+        if self.uncertainties is not None:
+            raise TypeError("RMSE metric does not take uncertainties as arg")
+        else:
+            # Define RMSE using numpy methods
+            RMSE_value = np.sqrt(np.mean(np.subtract(self.real, self.
+                                                     predictions)**2))
 
-        # Define RMSE using numpy methods
-        RMSE_value = np.sqrt(np.mean(np.subtract(self.real, self.predictions)
-                                     **2))
+            # Define RMSE_values as a list of RMSE deviations between data
+            # points
+            RMSE_values = []
 
-        # Define RMSE_values as a list of RMSE deviations between data points
-        RMSE_values = []
-
-        for i in range(len(self.predictions)):
-            RMSE_values.append(np.sqrt((self.real[i] - self.predictions[i])**2
-                                       ))
+            for i in range(len(self.predictions)):
+                RMSE_values.append(np.sqrt((self.real[i] - self.predictions[i]
+                                            )**2))
 
         return RMSE_value, RMSE_values
 
@@ -172,8 +180,12 @@ class F1(Metric):
                         Value of the F1 score computed
 
          '''
-        F1_value = f1_score(self.real, self.predictions, average = 'macro')
+        if self.uncertainties is not None:
+            raise TypeError("F1 metric does not take uncertainties as arg")
+        else:
+            F1_value = f1_score(self.real, self.predictions, average='macro')
         return F1_value
+
 
 class Accuracy(Metric):
     '''
@@ -199,5 +211,9 @@ class Accuracy(Metric):
                         Value of the Accuracy score computed
 
          '''
-        Accuracy_value = accuracy_score(self.real, self.predictions)
+        if self.uncertainties is not None:
+            raise TypeError("Accuracy metric does not take uncertainties as\
+                arg")
+        else:
+            Accuracy_value = accuracy_score(self.real, self.predictions)
         return Accuracy_value
