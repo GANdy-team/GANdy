@@ -4,20 +4,22 @@ Bayes NN.
 This contains the Bayes NN class, based on the KEras tutorial at
 https://keras.io/examples/keras_recipes/bayesian_neural_networks/
 """
-
-# imports
-import gandy.models.models
-# import tensorflow as tf
-
 # typing imports
-from typing import Tuple, Any, Object, Type
+from typing import Any, Callable, Type, Union, Tuple
+
+# 3rd part imports
+import numpy
+import tensorflow as tf
+import tensorflow_probability as tfp
+
+# gandy
+import gandy.models.models
 
 # typing
-import numpy
 Array = Type[numpy.ndarray]
 
 
-class bnn(gandy.models.models.UncertaintyModel):
+class BNN(gandy.models.models.UncertaintyModel):
     """
     Implements a Bayesian Neural Network (BNN)
     BNNS place a prior on the weights of the network and apply Bayes rule.
@@ -35,26 +37,7 @@ class bnn(gandy.models.models.UncertaintyModel):
     for a guide to implementing a BNN with Keras.
     """
 
-    def create_model_inputs(self, feature_names) -> Tuple[Object]:
-        '''
-        Arguments:
-            feature_names - example data to make predictions on
-                type == ndarray, list, or dictionary
-        Returns:
-            inputs
-                type == dictionary of Keras Input layers
-        '''
-        # do something like:
-        # https://keras.io/examples/keras_recipes/bayesian_neural_networks/
-        # inputs = {}
-        # for feature_name in feature_names:
-        #     inputs[feature_name] = tf.keras.layers.Input(
-        #         name=feature_name, shape=(1,), dtype=tf.float32
-        #     )
-        inputs = None
-        return inputs
-
-    def prior(kernel_size, bias_size, dtype=None) -> Object:
+    def prior(self, kernel_size, bias_size, dtype=None) -> Callable:
         '''
         Arguments:
             kernel_size
@@ -77,13 +60,27 @@ class bnn(gandy.models.models.UncertaintyModel):
         #         )
         #     ]
         # )
-        prior_model = None
+        try:
+            kernel_size = int(kernel_size)
+            bias_size = int(bias_size)
+        except BaseException:
+            raise TypeError('Cannot convert kernel and bias to int.')
+        n = kernel_size + bias_size
+        prior_model = tf.keras.Sequential(
+            [
+                tfp.layers.DistributionLambda(
+                    lambda t: tfp.distributions.MultivariateNormalDiag(
+                        loc=tf.zeros(n), scale_diag=tf.ones(n)
+                    )
+                )
+            ]
+        )
         return prior_model
 
     # Define variational posterior weight distribution as multivariate
     # Gaussian. Note that the learnable parameters for this
     # distribution are the means, variances, and covariances.
-    def posterior(kernel_size, bias_size, dtype=None) -> Object:
+    def posterior(self, kernel_size, bias_size, dtype=None) -> Callable:
         '''
         Arguments:
             kernel_size
@@ -104,14 +101,28 @@ class bnn(gandy.models.models.UncertaintyModel):
         #         tfp.layers.MultivariateNormalTriL(n),
         #     ]
         # )
-        posterior_model = None
+        try:
+            kernel_size = int(kernel_size)
+            bias_size = int(bias_size)
+        except BaseException:
+            raise TypeError('Cannot convert kernel and bias to int.')
+        n = kernel_size + bias_size
+        posterior_model = tf.keras.Sequential(
+            [
+                tfp.layers.VariableLayer(
+                    tfp.layers.MultivariateNormalTriL.params_size(n),
+                    dtype=dtype
+                ),
+                tfp.layers.MultivariateNormalTriL(n)
+            ]
+        )
         return posterior_model
 
     # Since the output of the model is a distribution, rather than a
     # point estimate, we use the negative loglikelihood as our loss function
     # to compute how likely to see the true data (targets) from the
     # estimated distribution produced by the model.
-    def negative_loglikelihood(targets, estimated_distribution) -> Array:
+    def negative_loglikelihood(self, targets, estimated_distribution) -> Array:
         '''
         Arguments:
             targets - training targets
@@ -125,9 +136,22 @@ class bnn(gandy.models.models.UncertaintyModel):
         # do something like:
         # https://keras.io/examples/keras_recipes/bayesian_neural_networks/
         # return -estimated_distribution.log_prob(targets)
+        try:
+            nll = estimated_distribution.log_prob(targets)
+        except AttributeError:
+            raise AttributeError('Passed distribution does not have the\
+ log_prob method')
+        return -nll
 
     # overridden method from UncertaintyModel class
-    def _build(self, *args, **kwargs) -> Object:
+    def _build(self,
+               train_size: int,
+               task_type: str = 'regression',
+               activation: Union[Callable, str] = 'sigmoid',
+               optimizer: Union[Callable, str] = 'adam',
+               neurons: Tuple[int] = (12, 12, 12),
+               metrics=['MSE'],
+               **kwargs) -> Callable:
         '''
         Construct the model.
         User has the option to specify:
@@ -158,7 +182,7 @@ class bnn(gandy.models.models.UncertaintyModel):
         # loss = negative_loglikelihood(targets, estimated_distribution)
         # get train_size, i.e., train_size = xshape[0]
 
-        # inputs = create_model_inputs()
+        # inputs = keras.Input(self.xshape)
         # input_values = list(inputs.values())
         # features = tf.keras.layers.concatenate(input_values)
         # features = tf.keras.layers.BatchNormalization()(features)
@@ -184,13 +208,76 @@ class bnn(gandy.models.models.UncertaintyModel):
 
         # model = keras.Model(inputs=inputs, outputs=outputs)
         # model.compile(**kwargs)
-        # self.model = model
-        return self.model
+
+        # parse kwargs
+        layer_kwargs = {}
+        optimizer_kwargs = {}
+        output_kwargs = {}
+
+        for k, v in kwargs.items():
+            if k.startswith('optimizer_'):
+                optimizer_kwargs[k[10:]] = v
+            elif k.startswith('layer_'):
+                layer_kwargs[k[7:]] = v
+            elif k.startswith('output_'):
+                output_kwargs[k[8:]] = v
+            else:
+                print(k + ' is not a valid hyperparamter, ignoring')
+                pass
+
+        inputs = tf.keras.Input(self.xshape)
+        f = tf.keras.layers.BatchNormalization()(inputs)
+
+        # loop through each neuron
+        for n in neurons:
+            f = tfp.layers.DenseVariational(
+                units=n,
+                make_prior_fn=self.prior,
+                make_posterior_fn=self.posterior,
+                kl_weight=1 / train_size,
+                activation=activation,
+                **layer_kwargs
+            )(f)
+
+        # determine output type
+        if task_type == 'regression':
+            outl = tfp.layers.IndependentNormal
+            distr = tf.keras.layers.Dense(
+                outl.params_size(self.yshape),
+                **output_kwargs
+            )(f)
+            outputs = outl(self.yshape)(distr)
+        elif task_type == 'classification':
+            outl = tfp.layers.CategoricalMixtureOfOneHotCategorical
+            distr = tf.keras.layers.Dense(
+                outl.params_size(self.yshape, 2),
+                **output_kwargs
+            )(f)
+            outputs = outl(self.yshape, 2)(distr)
+        else:
+            raise ValueError('Unknown task typle {}'.format(task_type))
+
+        if not callable(optimizer):
+            if isinstance(optimizer, str):
+                optimizer = tf.keras.optimizers.get(optimizer,
+                                                    **optimizer_kwargs)
+            else:
+                pass
+        else:
+            optimizer = optimizer(**optimizer_kwargs)
+
+        model = tf.keras.Model(inputs=inputs, outputs=outputs)
+        model.compile(optimizer=optimizer,
+                      loss=self.negative_loglikelihood,
+                      metrics=metrics)
+
+        return model
 
     # overridden method from UncertaintyModel class
     def _train(self,
                Xs: Array,
                Ys: Array,
+               metric: Callable = None,
                *args,
                **kwargs) -> Any:
         '''
@@ -204,13 +291,12 @@ class bnn(gandy.models.models.UncertaintyModel):
                 ters or pass to nested functions.
         '''
         # losses = self.model.fit(Xs, **kwargs)
-        losses = None
+        losses = self.model.fit(Xs, Ys, **kwargs)
         return losses
 
     # overridden method from UncertaintyModel class
     def _predict(self,
                  Xs: Array,
-                 *args,
                  **kwargs):
         '''
         Arguments:
@@ -231,30 +317,39 @@ class bnn(gandy.models.models.UncertaintyModel):
         # mean, std = self.model.evaluate(Xs, **kwargs)
         # BNN model returns mean and variance as output
         # convert to predictions and uncertainties
-        predictions, uncertainties = None, None
+        dists = self.model(Xs, **kwargs)
+        predictions = dists.mean().numpy()
+        uncertainties = dists.stddev().numpy()
         return predictions, uncertainties
 
-        def _save(filename: str, **kwargs):
-            """Method defined by child to save the predictor.
+    def save(self, filename: str, **kwargs):
+        """Method defined by child to save the predictor.
 
-            Method must save into memory the object at self.model
+        Method must save into memory the object at self.model
 
-            Args:
-                filename (str):
-                    name of file to save model to
-            """
-            # call Keras save function
-            return None
+        Args:
+            filename (str):
+                name of file to save model to
+        """
+        # call Keras save function
+        self.model.save(filename)
+        return None
 
-        def _load(self, filename: str, **kwargs):
-            """Method defined by child to load a predictor into memory.
+    @classmethod
+    def load(cls, filename: str, **kwargs):
+        """Method defined by child to load a predictor into memory.
 
-            Loads the object to be assigned to self.model.
+        Loads the object to be assigned to self.model.
 
-            Args:
-                filename (str):
-                    path of file to load
-            """
-            # call Keras.load function
-            model = None
-            return model
+        Args:
+            filename (str):
+                path of file to load
+        """
+        model = tf.keras.models.load_model(filename)
+        xshape = model.input_shape[1:]
+        yshape = model.layers[-1].get_config()['event_shape']
+        inst = cls.__new__(cls)
+        inst._xshape = xshape
+        inst._yshape = yshape
+        inst._model = model
+        return inst

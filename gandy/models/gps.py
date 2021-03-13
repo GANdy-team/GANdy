@@ -19,7 +19,7 @@ ctions of target values and uncertainties.
     score = cfr.evaluate(Xs, Ys, metric='mse')
 """
 # imports
-from typing import Type, Tuple
+from typing import Type, Tuple, Callable
 
 import sklearn.gaussian_process
 import numpy
@@ -68,11 +68,6 @@ class ucGaussianProcess(gandy.models.models.UncertaintyModel):
             instance of sklearn.gaussian_process:
                 The built predictor.
         """
-        # psueudocode
-        # . if statement classifier or regressor
-        #    instatiate scikitlearn object with kwargs
-        # . else
-        #    raise not implimented error
         if model_type == 'classifier':
             modelcls = sklearn.gaussian_process.GaussianProcessClassifier
         elif model_type == 'regressor':
@@ -86,6 +81,7 @@ class ucGaussianProcess(gandy.models.models.UncertaintyModel):
     def _train(self,
                Xs: Array,
                Ys: Array,
+               metric: Callable = None,
                **kwargs):
         """Trains the gaussian process on training data via covariance kernel.
 
@@ -104,8 +100,6 @@ class ucGaussianProcess(gandy.models.models.UncertaintyModel):
             None:
                 No losses to return for GP fitting.
         """
-        # pseudocode
-        # . fit self model with Xs, Ys
         self.model.fit(Xs, Ys, **kwargs)
         return None
 
@@ -130,10 +124,6 @@ class ucGaussianProcess(gandy.models.models.UncertaintyModel):
                 array of prediction uncertainties of targets withthe same
                 length as Xs
         """
-        # pseudocode
-        # . get uncertainties and predictions by passing return_std to
-        #     sklearn object's predict
-        print(self.model.__class__)
         if isinstance(self.model,
                       sklearn.gaussian_process.GaussianProcessRegressor):
             predictions, uncertainties = self.model.predict(
