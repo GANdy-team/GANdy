@@ -10,6 +10,10 @@ from deepchem.molnet import load_qm9
 def create_data(to_csv = True):
 
 	#import qm9 test data
+	qm9_tasks, datasets, transformers = load_qm9()
+	train_dataset, valid_dataset, test_dataset = datasets
+
+
 	Y = test_dataset.y
 	YT = Y.T
 
