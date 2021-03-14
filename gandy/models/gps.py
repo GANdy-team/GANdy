@@ -57,7 +57,6 @@ class ucGaussianProcess(gandy.models.models.UncertaintyModel):
         super().__init__(xshape, yshape, model_type=model_type, **kwargs)
         return
 
-
     def _build(self,
                model_type: str,
                **kwargs) -> Predictor:

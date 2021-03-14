@@ -29,7 +29,7 @@ class NotImplimented(Exception):
 
     Args:
         inst (object): the class instance that raises this exception
-        caller (str): method name 
+        caller (str): method name
     """
 
     def __init__(self, inst, caller):
@@ -96,7 +96,7 @@ class UncertaintyModel:
         Returns:
             Xs (ndarray): the formated X data
             (optional) Ys (ndarray): the formated Y data if present
-        """ 
+        """
         if hasattr(Xs, 'shape'):
             pass
         else:
