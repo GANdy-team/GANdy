@@ -16,10 +16,10 @@ ctions of target values and uncertainties.
     predictions, uncertainties = cfr.predict(Xst)
 
     Score the model on the test set using an mse metric:
-    score = cfr.evaluate(Xs, Ys, metric='mse')
+    score = cfr.evaluate(Xs, Ys, metric='MSE')
 """
 # imports
-from typing import Type, Tuple, Object
+from typing import Type, Tuple, Callable
 
 import sklearn.gaussian_process
 import numpy
@@ -27,9 +27,8 @@ import numpy
 import gandy.models.models
 
 # Typing
-Model = Type[Object]
 Array = Type[numpy.ndarray]
-Predictor = Type[sklearn.gaussian_process]
+Predictor = sklearn.gaussian_process
 
 # The gaussian process uncertainty model
 
@@ -37,17 +36,26 @@ Predictor = Type[sklearn.gaussian_process]
 class ucGaussianProcess(gandy.models.models.UncertaintyModel):
     """Gaussian Process Regressor/Classifier Uncertainty Model
 
-    Utilizes sklearn's GP objects as an Uncertainty Model, able to make predic-
-    tions and uncertainty predictions.
+    Utilizes sklearn's GP Callables as an Uncertainty Model, able to make
+    predictions and uncertainty predictions.
 
     Args:
         xshape (tuple of int):
             shape of example data, excluding the first dimension
         yshape (tuple of int):
             shape of target data, excluding the first dimension
+        model_type (str):
+            'regressor' or 'classifier'
         **kwargs:
             keyword arguments to pass to the build method
     """
+    def __init__(self,
+                 xshape: Tuple[int],
+                 yshape: Tuple[int],
+                 model_type: str,
+                 **kwargs):
+        super().__init__(xshape, yshape, model_type=model_type, **kwargs)
+        return
 
     def _build(self,
                model_type: str,
@@ -69,17 +77,20 @@ class ucGaussianProcess(gandy.models.models.UncertaintyModel):
             instance of sklearn.gaussian_process:
                 The built predictor.
         """
-        # psueudocode
-        # . if statement classifier or regressor
-        #    instatiate scikitlearn object with kwargs
-        # . else
-        #    raise not implimented error
-        model = None
+        if model_type == 'classifier':
+            modelcls = sklearn.gaussian_process.GaussianProcessClassifier
+        elif model_type == 'regressor':
+            modelcls = sklearn.gaussian_process.GaussianProcessRegressor
+        else:
+            raise ValueError(
+                '`model_type` should be "classifier" or "regressor"')
+        model = modelcls(**kwargs)
         return model
 
     def _train(self,
                Xs: Array,
                Ys: Array,
+               metric: Callable = None,
                **kwargs):
         """Trains the gaussian process on training data via covariance kernel.
 
@@ -88,9 +99,9 @@ class ucGaussianProcess(gandy.models.models.UncertaintyModel):
         associated with the covariance fit, so None is returned.
 
         Args:
-            Xs (Array):
+            Xs (ndarray):
                 Examples data to train on.
-            Ys (Array):
+            Ys (ndarray):
                 Label data that is targeted for metrics for training.
             **kwargs:
                 Keyword arguments passed to model's fit method.
@@ -98,8 +109,7 @@ class ucGaussianProcess(gandy.models.models.UncertaintyModel):
             None:
                 No losses to return for GP fitting.
         """
-        # pseudocode
-        # . fit self model with Xs, Ys
+        self.model.fit(Xs, Ys, **kwargs)
         return None
 
     def _predict(self,
@@ -118,24 +128,29 @@ class ucGaussianProcess(gandy.models.models.UncertaintyModel):
                 keyword arguments passed to predictor's predict method
 
         Returns:
-            tuple of ndarray:
-                array of predictions of targets with the same length as Xs
-                array of prediction uncertainties of targets withthe same
-                length as Xs
+            predictions (ndarray): predictions with the same length as Xs
+            uncertainties (ndarray):
+                uncertainties on returned predictions, same length
         """
-        # pseudocode
-        # . get uncertainties and predictions by passing return_std to
-        #     sklearn object's predict
-        predictions = None
-        uncertainties = None
+        if isinstance(self.model,
+                      sklearn.gaussian_process.GaussianProcessRegressor):
+            predictions, uncertainties = self.model.predict(
+                Xs, return_std=True
+            )
+        elif isinstance(self.model,
+                        sklearn.gaussian_process.GaussianProcessClassifier):
+            predictions = self.model.predict(Xs)
+            uncertainties = self.model.predict_proba(Xs)
+        else:
+            raise TypeError('The model does not seem to be a sklearn GP')
         return predictions, uncertainties
 
     @classmethod
-    def R(cls, *args, **kwargs) -> Model:
+    def R(cls, *args, **kwargs):
         """Alternative to passing model_type as 'regressor' to object
         initialization.
 
-        Arguments:
+        Args:
             *args:
                 positional arguments to pass to init
             **kwargs:
@@ -144,11 +159,11 @@ class ucGaussianProcess(gandy.models.models.UncertaintyModel):
         return cls(*args, model_type='regressor', **kwargs)
 
     @classmethod
-    def C(cls, *args, **kwargs) -> Model:
+    def C(cls, *args, **kwargs):
         """Alternative to passing model_type as 'classifier' to object
         initialization.
 
-        Arguments:
+        Args:
             *args:
                 positional arguments to pass to init
             **kwargs:
