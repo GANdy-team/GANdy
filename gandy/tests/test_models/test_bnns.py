@@ -19,7 +19,7 @@ class TestBNN(unittest.TestCase):
         """
         kernel_size = 5
         bias_size = 5
-        subject = gandy.models.bnns.BNN((1,), (1,))
+        subject = gandy.models.bnns.BNN((1,), (1,), train_size=5)
         # expected success must return a model
         prior = subject.prior(kernel_size, bias_size)
         self.assertTrue(isinstance(prior, tf.keras.Model))
@@ -37,7 +37,7 @@ class TestBNN(unittest.TestCase):
         """
         kernel_size = 5
         bias_size = 5
-        subject = gandy.models.bnns.BNN((1,), (1,))
+        subject = gandy.models.bnns.BNN((1,), (1,), train_size=5)
         # expected success must return a model
         prior = subject.posterior(kernel_size, bias_size)
         self.assertTrue(isinstance(prior, tf.keras.Model))
@@ -53,7 +53,7 @@ class TestBNN(unittest.TestCase):
 
         Distribution should impliment log_prob method
         """
-        subject = gandy.models.bnns.BNN((1,), (1,))
+        subject = gandy.models.bnns.BNN((1,), (1,), train_size=5)
         # failure mode, does not have method
 
         def callable_wo_log_prob():
@@ -68,11 +68,6 @@ class TestBNN(unittest.TestCase):
                                        mocked_dist)
         mocked_dist.log_prob.assert_called_with('targets')
 
-        # ability to catch non float
-        mocked_dist.log_prob.return_value = 'string'
-        with self.assertRaises(ValueError):
-            subject.negative_loglikelihood('targets',
-                                           mocked_dist)
         return
 
     def test__build(self):
@@ -99,7 +94,7 @@ class TestBNN(unittest.TestCase):
         # test keyword assignment
         subject = gandy.models.bnns.BNN((2,), (4,),
                                         train_size=len(x),
-                                        optimizer='RMSProp')
+                                        optimizer='RMSprop')
         self.assertTrue(isinstance(subject.model.optimizer,
                                    tf.keras.optimizers.RMSprop))
         subject = gandy.models.bnns.BNN((2,), (4,),

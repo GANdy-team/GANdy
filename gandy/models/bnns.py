@@ -36,6 +36,13 @@ class BNN(gandy.models.models.UncertaintyModel):
     https://keras.io/examples/keras_recipes/bayesian_neural_networks/
     for a guide to implementing a BNN with Keras.
     """
+    def __init__(self,
+                 xshape: Tuple[int],
+                 yshape: Tuple[int],
+                 train_size: int,
+                 **kwargs):
+        super().__init__(xshape, yshape, train_size=train_size, **kwargs)
+        return
 
     def prior(self, kernel_size, bias_size, dtype=None) -> Callable:
         '''
@@ -48,18 +55,6 @@ class BNN(gandy.models.models.UncertaintyModel):
             prior model
                 type == Keras sequential model
         '''
-        # from keras tutorial:
-        # Note: this is hard-coded to be unit normal!
-        # n = kernel_size + bias_size
-        # prior_model = keras.Sequential(
-        #     [
-        #         tfp.layers.DistributionLambda(
-        #             lambda t: tfp.distributions.MultivariateNormalDiag(
-        #                 loc=tf.zeros(n), scale_diag=tf.ones(n)
-        #             )
-        #         )
-        #     ]
-        # )
         try:
             kernel_size = int(kernel_size)
             bias_size = int(bias_size)
@@ -91,16 +86,6 @@ class BNN(gandy.models.models.UncertaintyModel):
             posterior model
                 type == Keras sequential model
         '''
-        # n = kernel_size + bias_size
-        # posterior_model = keras.Sequential(
-        #     [
-        #         tfp.layers.VariableLayer(
-        #            tfp.layers.MultivariateNormalTriL.params_size(n),
-        #            dtype=dtype
-        #         ),
-        #         tfp.layers.MultivariateNormalTriL(n),
-        #     ]
-        # )
         try:
             kernel_size = int(kernel_size)
             bias_size = int(bias_size)
@@ -133,27 +118,19 @@ class BNN(gandy.models.models.UncertaintyModel):
             negative log likelihood
                 type == ndarray
         '''
-        # do something like:
-        # https://keras.io/examples/keras_recipes/bayesian_neural_networks/
-        # return -estimated_distribution.log_prob(targets)
         try:
             nll = estimated_distribution.log_prob(targets)
         except AttributeError:
             raise AttributeError('Passed distribution does not have the\
  log_prob method')
-        if not isinstance(nll, float):
-            raise ValueError(
-                'the returned value should be a float, not {}'.format(type(nll)
-                                                                      )
-            )
         return -nll
 
     # overridden method from UncertaintyModel class
     def _build(self,
                train_size: int,
                task_type: str = 'regression',
-               activation: Union[Callable, str] = 'relu',
-               optimizer: Union[Callable, str] = 'adam',
+               activation: Union[Callable, str] = 'sigmoid',
+               optimizer: Union[Callable, str] = 'Adam',
                neurons: Tuple[int] = (12, 12, 12),
                metrics=['MSE'],
                **kwargs) -> Callable:
@@ -171,49 +148,6 @@ class BNN(gandy.models.models.UncertaintyModel):
             or anything needed to compile model
             (think about default vals for required params)
         '''
-        # do something like:
-        # https://keras.io/examples/keras_recipes/bayesian_neural_networks/
-
-        # if features is None:
-        #     features = np.arange(xshape[0])
-
-        # default activation = 'relu'
-        # default optimizer = tf.keras.optimizers.adam
-        # default loss = tf.keras.losses.MSE
-
-        # # making appropriate loss:
-        # estimated_distribution = loss
-        # make this a hyperparamter or Gaussian?
-        # loss = negative_loglikelihood(targets, estimated_distribution)
-        # get train_size, i.e., train_size = xshape[0]
-
-        # inputs = keras.Input(self.xshape)
-        # input_values = list(inputs.values())
-        # features = tf.keras.layers.concatenate(input_values)
-        # features = tf.keras.layers.BatchNormalization()(features)
-
-        # Deterministic BNNs = layer weights using Dense layers whereas
-        # Probabilistic BNNs = layer weights using DenseVariational layers.
-        # for unit in units:
-        #   features = tfp.layers.DenseVariational(
-        #         units=unit,
-        #         make_prior_fn=self.prior,
-        #         make_posterior_fn=self.posterior,
-        #         kl_weight=1 / train_size,
-        #         activation=activation,
-        #     )(features)
-
-        # Create a probabilistic output (Normal distribution),
-        # and use the Dense layer to produce the parameters of
-        # the distribution.
-        # We set units=2 to learn both the mean and the variance of the
-        # Normal distribution.
-        # distribution_params = layers.Dense(units=2)(features)
-        # outputs = tfp.layers.IndependentNormal(1)(distribution_params)
-
-        # model = keras.Model(inputs=inputs, outputs=outputs)
-        # model.compile(**kwargs)
-
         # parse kwargs
         layer_kwargs = {}
         optimizer_kwargs = {}
@@ -264,8 +198,8 @@ class BNN(gandy.models.models.UncertaintyModel):
 
         if not callable(optimizer):
             if isinstance(optimizer, str):
-                optimizer = tf.keras.optimizers.get(optimizer,
-                                                    **optimizer_kwargs)
+                optimizer = getattr(tf.keras.optimizers, optimizer)
+                optimizer = optimizer(**optimizer_kwargs)
             else:
                 pass
         else:
@@ -282,6 +216,7 @@ class BNN(gandy.models.models.UncertaintyModel):
     def _train(self,
                Xs: Array,
                Ys: Array,
+               metric: Callable = None,
                *args,
                **kwargs) -> Any:
         '''
