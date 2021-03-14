@@ -6,6 +6,8 @@ import unittest.mock as mock
 import gandy.models.gans as gans
 import gandy.models.models
 
+import numpy as np
+
 
 class TestGAN(unittest.TestCase):
     """Test GAN class."""
@@ -23,38 +25,13 @@ class TestGAN(unittest.TestCase):
         This checks both functions are called. It also checks that both
         generator and discriminator are attributes with type == Keras model.
         """
-        # CHECK (normal) GAN
-        # create gan instance
-        subject = gans.GAN(xshape=(4,), yshape=(2,))
-        kwargs = dict(noise_shape=(5,), conditional=False)
-        subject._build(**kwargs)
-        # created mocked functions
-        subject._model.create_generator = unittest.mock.MagicMock(
-            name='create_generator')
-        subject._model.create_discriminator = unittest.mock.MagicMock(
-            name='create_discriminator')
-        # assert create generator function called
-        subject._model.create_generator.assert_called_once_with(kwargs)
-        # assert create discriminator function called
-        subject._model.create_discriminator.assert_called_once_with(kwargs)
-        # check attributes
-        self.assertTrue(subject.conditional, False)
-        self.assertTrue(subject.noise_shape, (5,))
-
         # CHECK Conditional GAN
         # create gan instance
-        subject = gans.CondGAN(xshape=(4,), yshape=(2, 4))
-        self.assertTrue(issubclass(gans.CondGAN, gans.GAN))
+        subject = gans.GAN(xshape=(10,), yshape=(1,))
         kwargs = dict(noise_shape=(5,))
         subject._build(**kwargs)
-        # assert create generator function called
-        subject._model.create_generator.assert_called_once_with(kwargs)
-        # assert create discriminator function called
-        subject._model.create_discriminator.assert_called_once_with(kwargs)
         # check attributes
         self.assertTrue(subject.conditional, True)
-        self.assertTrue(subject.noise_shape, (5,))
-        self.assertTrue(subject.n_classes, 4)
         return
 
     def test__train(self):
@@ -68,18 +45,20 @@ class TestGAN(unittest.TestCase):
         Xs = 'Xs'
         Ys = 'Ys'
         subject = gans.GAN(xshape=(4,), yshape=(2,))
-        subject.iterbacthes = mock.MagicMock(name='iterbatches',
+        subject.iterbatches = mock.MagicMock(name='iterbatches',
                                              return_value="Batch1")
-        subject._model.fit_gan = mock.MagicMock(name='fit_gan')
-        kwargs = dict(option='x1')
-        subject._train(Xs, Ys, **kwargs)
+        subject._model.fit_gan = mock.MagicMock(name='fit_gan',
+                                                return_value='losses')
+        kwargs = dict(batches=100)
+        losses = subject._train(Xs, Ys, **kwargs)
 
         # assert fit_gan was called
-        subject.iterbacthes.assert_called_with(Xs, Ys, **kwargs)
+        subject.iterbatches.assert_called_with(Xs, Ys, 100)
         subject._model.fit_gan.assert_called_with("Batch1")
+        self.assertEqual(losses, 'losses')
         return
 
-    @unittest.mock.patch('gandy.models.gans.GAN._build', return_value='Model')
+    @unittest.mock.patch('gandy.models.gans.GAN._build')
     def test__predict(self, mocked__build):
         """
         Test predict function.
@@ -88,33 +67,21 @@ class TestGAN(unittest.TestCase):
         This checks predictions and uncertainties are the appropriate shape
         and the appropriate deepchem calls are made.
         """
-        Xs = 'Xs'
-        # CHECK (normal) GAN
-        subject = gans.GAN(xshape=(4,), yshape=(2,))
-        subject.predict_gan_generator = mock.MagicMock(
-            name='predict_gan_generator', return_value='generated_points')
-        preds, ucs = subject._predict(Xs)
-        subject._model.predict_gan_generator.assert_called_with(None)
-        self.assertEqual(preds, 'generated_points')
-        self.assertEqual(ucs, None)
-
         # CHECK Conditional GAN
-        Ys = 'Ys'
-        subject = gans.GAN(xshape=(4,), yshape=(2, 3), n_classes=3)
+        Xs = 'Xs'
+        subject = gans.GAN(xshape=(4,), yshape=(2, 3))
+        subject.conditional = True  # normally set in build
         subject._model.predict_gan_generator = mock.MagicMock(
-            name='predict_gan_generator', return_value='generated_points')
-        with mock.patch('deepchem.metrics.to_one_hot',
-                        return_value=[10]) as mocked_one_hot:
-            preds, ucs = subject._predict(Xs, Ys=Ys)
-            mocked_one_hot.assert_called_with(Ys, 3)
-            subject._model.predict_gan_generator.assert_called_with(
-                conditional_inputs=[10])
-            self.assertEqual(preds, 'generated_points')
-            self.assertEqual(ucs, None)
+            name='predict_gan_generator', return_value=np.array([[1]]))
+        preds, ucs = subject._predict(Xs)
+        subject._model.predict_gan_generator.assert_called_with(
+            conditional_inputs=[Xs])
+        self.assertEqual(preds, np.array([1]))
+        self.assertEqual(ucs, np.array([0]))
         return
 
-    @unittest.mock.patch('gandy.models.gans.GAN._build', return_value='Model')
-    def test_iterbacthes(self, mocked__build):
+    @unittest.mock.patch('gandy.models.gans.GAN._build')
+    def test_iterbatches(self, mocked__build):
         """
         Test iterbacthes function.
 
@@ -125,16 +92,17 @@ class TestGAN(unittest.TestCase):
         Xs = 'Xs'
         Ys = 'Ys'
         subject = gans.GAN(xshape=(4,), yshape=(2,))
+        subject._model.batch_size = mock.MagicMock(name='batch_size',
+                                                   return_value=100)
         subject.generate_data = mock.MagicMock(
-            name='generate_data', return_value=('classes', 'points'))
-        kwargs = dict(bacthes=1)
+            name='generate_data', return_value=['classes', 'points'])
+        kwargs = dict(batches=1)
         result = list(subject.iterbatches(Xs, Ys, **kwargs))
         subject.generate_data.assert_called_with(Xs, Ys,
-                                                 subject.model.batch_size)
-        expected_result = {subject._model.data_inputs[0]: 'classes',
-                           subject._model.conditional_inputs[0]:
-                           'points'}
-        self.assertEqual(expected_result, result)
+                                                 subject._model.batch_size)
+        data = result[0]
+        for key in data.keys():
+            self.assertTrue(data[key] in ['classes', 'points'])
         return
 
     @unittest.mock.patch('gandy.models.gans.GAN._build', return_value='Model')
@@ -144,36 +112,37 @@ class TestGAN(unittest.TestCase):
 
         The generate_data function creates batches of boostrapped data.
         """
-        Xs = ['x1', 'x2', 'x3']
-        Ys = ['y1', 'y2', 'y3']
-        subject = gans.GAN(xshape=(4,), yshape=(2,))
+        Xs = np.array([[1], [2], [3]])
+        Ys = np.array([2, 2, 1])
+        subject = gans.GAN(xshape=(3,), yshape=(1,))
         classes, points = subject.generate_data(Xs, Ys, 5)
         self.assertEqual(len(classes), 5)
         self.assertEqual(len(points), 5)
         return
 
-    @unittest.mock.patch('gandy.models.gans.GAN._build', return_value='Model')
-    def test_save(self, mocked__build):
+    def test_save(self):
         """
         Test save function.
 
         This checks that a file is written with the appropriate name.
         """
         # test path save
-        subject = gans.GAN(xshape=(4,), yshape=(2,), n_classes=10)
+        subject = gans.GAN(xshape=(4,), yshape=(2,))
         subject._model.save = mock.MagicMock(name='save')
         subject.save('path')
         subject._model.save.assert_called_with('path')
         return
 
-    @unittest.mock.patch('tf.keras.models.load_model', return_value='Model')
-    def test_load(self, mocked_load):
+    def test_load(self,):
         """
         Test load function.
 
         This checks that a Keras model instance is returned.
         """
         # test load
-        subject = gans.GAN.load('test_model.h5')
-        self.assertEqaul(subject, 'Model')
+        with unittest.mock.patch('tensorflow.keras.models.load_model')\
+                as mocked_load:
+            subject = gandy.models.gans.GAN.load('filename')
+            self.assertTrue(isinstance(subject, gandy.models.gans.GAN))
+            mocked_load.assert_called_with('filename')
         return

@@ -231,7 +231,6 @@ class GAN(gandy.models.models.UncertaintyModel):
         """
         # save model
         # filename could be a path or end with .h5
-        print(f"Saving model as {filename}")
         self._model.save(filename)
         return None
 
@@ -250,16 +249,16 @@ class GAN(gandy.models.models.UncertaintyModel):
         """
         # call Keras.load function
         if filename.endswith('.h5'):
-            model = tf.keras.model.load_model(filename, compile=False)
+            model = tf.keras.models.load_model(filename, compile=False)
         else:
             path_to_model = filename
-            model = tf.keras.model.load_model(path_to_model)
+            model = tf.keras.models.load_model(path_to_model)
         # get x and y shape
-        xshape = None
-        yshape = None
+        xshape = model.input_shape[1:]
+        yshape = model.layers[-1].get_config()['event_shape']
         # instantiate
         instance = cls.__new__(cls)
         instance._xshape = xshape
         instance._yshape = yshape
         instance._model = model
-        return model
+        return instance
