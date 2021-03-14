@@ -50,7 +50,6 @@ class Metric:
         self.predictions = predictions
         self.real = real
         self.uncertainties = uncertainties
-        self.calculate()
         return
 
     def calculate(self, **kwargs):
