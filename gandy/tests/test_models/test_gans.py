@@ -26,7 +26,7 @@ class TestGAN(unittest.TestCase):
         # CHECK (normal) GAN
         # create gan instance
         subject = gans.GAN(xshape=(4,), yshape=(2,))
-        kwargs = dict(noise_shape=(5,))
+        kwargs = dict(noise_shape=(5,), conditional=False)
         subject._build(**kwargs)
         # created mocked functions
         subject._model.create_generator = unittest.mock.MagicMock(
@@ -45,7 +45,7 @@ class TestGAN(unittest.TestCase):
         # create gan instance
         subject = gans.CondGAN(xshape=(4,), yshape=(2, 4))
         self.assertTrue(issubclass(gans.CondGAN, gans.GAN))
-        kwargs = dict(noise_shape=(5,), n_classes=4)
+        kwargs = dict(noise_shape=(5,))
         subject._build(**kwargs)
         # assert create generator function called
         subject._model.create_generator.assert_called_once_with(kwargs)
@@ -124,34 +124,17 @@ class TestGAN(unittest.TestCase):
         # check NOT one hot encoded Ys
         Xs = 'Xs'
         Ys = 'Ys'
-        subject = gans.GAN(xshape=(4,), yshape=(2,), n_classes=10)
+        subject = gans.GAN(xshape=(4,), yshape=(2,))
         subject.generate_data = mock.MagicMock(
             name='generate_data', return_value=('classes', 'points'))
-        kwargs = dict(bacthes=1, batch_size=5)
-        with mock.patch('deepchem.metrics.to_one_hot',
-                        return_value='one_hot_classes') as mocked_one_hot:
-            result = list(subject.iterbatches(Xs, Ys, **kwargs))
-            subject.generate_data.assert_called_with(Xs, Ys, 5)
-            expected_result = {subject._model.data_inputs[0]: 'points',
-                               subject._model.conditional_inputs[0]:
-                               'classes'}
-            self.assertEqual(expected_result, result)
-        # check one hot encoded Ys
-        Xs = 'Xs'
-        Ys = [[0, 1], [1, 0], [1, 0]]
-        subject = gans.GAN(xshape=(4,), yshape=(2,), n_classes=10)
-        subject.generate_data = mock.MagicMock(
-            name='generate_data', return_value=('classes', 'points'))
-        kwargs = dict(bacthes=1, batch_size=5)
-        with mock.patch('deepchem.metrics.to_one_hot',
-                        return_value='one_hot_classes') as mocked_one_hot:
-            result = list(subject.iterbacthes(Xs, Ys, **kwargs))
-            subject.generate_data.assert_called_with(Xs, Ys, 5)
-            mocked_one_hot.assert_called_with('classes', 10)
-            expected_result = {subject._model.data_inputs[0]: 'points',
-                               subject._model.conditional_inputs[0]:
-                               'one_hot_classes'}
-            self.assertEqual(expected_result, result)
+        kwargs = dict(bacthes=1)
+        result = list(subject.iterbatches(Xs, Ys, **kwargs))
+        subject.generate_data.assert_called_with(Xs, Ys,
+                                                 subject.model.batch_size)
+        expected_result = {subject._model.data_inputs[0]: 'classes',
+                           subject._model.conditional_inputs[0]:
+                           'points'}
+        self.assertEqual(expected_result, result)
         return
 
     @unittest.mock.patch('gandy.models.gans.GAN._build', return_value='Model')
@@ -163,7 +146,7 @@ class TestGAN(unittest.TestCase):
         """
         Xs = ['x1', 'x2', 'x3']
         Ys = ['y1', 'y2', 'y3']
-        subject = gans.GAN(xshape=(4,), yshape=(2,), n_classes=1)
+        subject = gans.GAN(xshape=(4,), yshape=(2,))
         classes, points = subject.generate_data(Xs, Ys, 5)
         self.assertEqual(len(classes), 5)
         self.assertEqual(len(points), 5)
@@ -181,9 +164,6 @@ class TestGAN(unittest.TestCase):
         subject._model.save = mock.MagicMock(name='save')
         subject.save('path')
         subject._model.save.assert_called_with('path')
-        # test h5 save
-        subject.save('test_model.h5')
-        subject._model.save.assert_called_with('test_model.h5')
         return
 
     @unittest.mock.patch('tf.keras.models.load_model', return_value='Model')
