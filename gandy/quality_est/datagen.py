@@ -1,3 +1,9 @@
+
+import numpy as np
+import pandas as pd
+import random
+
+
 def create_data(to_csv = True):
 
 	x1 = np.random.uniform(0, 1000, 1000)
