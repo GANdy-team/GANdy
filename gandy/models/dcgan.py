@@ -18,7 +18,7 @@ import warnings
 import deepchem
 import tensorflow as tf
 from tensorflow.keras.layers import Concatenate, Dense, Input
-from tensorflow.keras.layers import Dropout, LeakyReLU
+from tensorflow.keras.layers import Dropout
 
 # typing imports
 from typing import Tuple, Type
