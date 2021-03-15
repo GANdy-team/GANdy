@@ -7,17 +7,17 @@ from deepchem.molnet import load_qm9
 
 def generate_analytical_data(to_csv = True):
 
-	x1 = np.random.uniform(0, 1000, 1000)
-	x2 = np.random.uniform(0, 1000, 1000)
+	x1 = np.random.uniform(0, 10, 10000)
+	x2 = np.random.uniform(0, 10, 10000)
 	mu = 0
-	sigma = (x1+x2)/2
+	sigma = (x1+x2)/10
 
 	def f(x1, x2):
     		f_data = np.sin(x1)+np.cos(x2)
     		return f_data
 
 	def g(x1, x2):
-    		g_data = np.random.normal(mu, np.abs(sigma), 1000)
+    		g_data = np.random.normal(mu, np.abs(sigma), 10000)
     		return g_data
 
 	y = f(x1, x2) + g(x1, x2)
