@@ -50,9 +50,11 @@ def create_data(to_csv = True):
     		y[i] += g[i]
 
 
+	
+	gen_data = pd.DataFrame({'Y_gap':y, 'X1_mu':x1, 'X2_zpve':x2})
+
+
 	if to_csv:
-		dataframe = pd.DataFrame({'Y_gap':y, 'X1_mu':x1, 'X2_zpve':x2})
-		dataframe.to_csv("test_data_qm9.csv", index=False, sep = ',')
-		gen_data = pd.read_csv('test_data_qm9.csv')
+		gen_data.to
 
 	return gen_data
