@@ -160,3 +160,47 @@ class TestAccuracy(unittest.TestCase):
 
         # check to make sure output is correct type
         self.assertTrue(isinstance(subject.calculate(), (float, int)))
+
+
+class TestUCP(unittest.TestCase):
+    """Unit test for UCP subclass"""
+
+    def test_calculate(self):
+        """Test the calculate function within the UCP subclass"""
+
+        # failure case: data not iterable
+        with self.assertRaises(TypeError):
+            subject = metrics.UCP(predictions=np.array([0, 1, 2]),
+                                  real="0, 1, 2",
+                                  uncertainties=np.array([0, 0.5, 1])).\
+                                  calculate()
+
+        with self.assertRaises(TypeError):
+            subject = metrics.UCP(predictions="0, 1, 2",
+                                  real=np.array([0, 1, 2]),
+                                  uncertainties=np.array([0, 0.5, 1])).\
+                                  calculate()
+
+        with self.assertRaises(TypeError):
+            subject = metrics.UCP(predictions=np.array([0, 1, 2]),
+                                  real=np.array([0, 1, 2]),
+                                  uncertainties="0, 1, 2").\
+                                  calculate()
+
+        # failure case: Uncertainties not given but required
+        with self.assertRaises(TypeError):
+            subject = metrics.UCP(predictions=np.array([0, 1, 2]),
+                                  real=np.array([0, 1, 2])).\
+                                  calculate()
+
+        # check to make sure necessary attributes are inputted
+        subject = metrics.UCP(predictions=np.array([0, 1, 2]),
+                              real=np.array([0, 1, 2]),
+                              uncertainties=np.array([0, 0.5, 1]))
+
+        self.assertTrue(subject.predictions is not None)
+        self.assertTrue(subject.real is not None)
+        self.assertTrue(subject.uncertainties is not None)
+
+        # check to make sure output is correct type
+        self.assertTrue(isinstance(subject.calculate(), (float, int)))

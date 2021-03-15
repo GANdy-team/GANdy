@@ -1,6 +1,7 @@
 '''
 Metrics module: contains some relevent metrics to assess the performance of
 machine learning models.
+
 This module implements a parent metric class that contains necessary
 initialization arguments and automatically calls a calculate method to
 compute a given metric. Required intial arguments include the machine
@@ -190,3 +191,38 @@ class Accuracy(Metric):
         else:
             Accuracy_value = accuracy_score(self.real, self.predictions)
         return Accuracy_value
+
+
+class UCP(Metric):
+    '''
+    Uncertainty coverage probability class which defines the structure used
+    for computing the UCP between the passed in datasets. Inherets the
+    properties of the parent class Metrics.
+    '''
+
+    def calculate(self, **kwargs) -> float:
+        '''
+        Method that defines the mathematical formula necessary to compute
+        the UCP.
+            Args:
+                **kwargs:
+                    Necessary keyword arguments to be passed into calculate()
+                    method
+                Returns:
+                    UCP_value(float):
+                        Value of the UCP score computed
+         '''
+        if self.uncertainties is None:
+            raise TypeError("UCP metric requires uncertainties as arg")
+        else:
+            UCP_value = 0
+            for i in range(len(self.predictions)):
+                if ((self.predictions[i] - self.uncertainties[i]) <=
+                        self.real[i] and
+                    (self.predictions[i] + self.uncertainties[i]) >=
+                        self.real[i]):
+                    UCP_value += 1
+                else:
+                    pass
+
+        return UCP_value*(1/len(self.predictions))
