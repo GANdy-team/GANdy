@@ -95,8 +95,8 @@ class DCGAN(deepchem.models.GAN):
                     warnings.warn(f"Incorrect key {key}. Must be in\
                         {Base_hyperparams.keys()}")
             else:
-                warnings.warn(f"Incorrect key {key}.\
-                    Must start with generator_ or discriminator_")
+                warnings.warn(f"{key} must start with generator_ or discriminator_" +
+                	f"\nPassing {key} as deepchem model init kwargs.")
 
         # Deepchem init function + class atributes.
         super(DCGAN, self).__init__(**kwargs)

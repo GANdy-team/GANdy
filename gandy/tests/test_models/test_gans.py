@@ -128,9 +128,9 @@ class TestGAN(unittest.TestCase):
         """
         # test path save
         subject = gans.GAN(xshape=(4,), yshape=(2,))
-        subject._model.save = mock.MagicMock(name='save')
+        subject._model.model.save = mock.MagicMock(name='save')
         subject.save('path')
-        subject._model.save.assert_called_with('path')
+        subject._model.model.save.assert_called_with('path')
         return
 
     def test_load(self,):

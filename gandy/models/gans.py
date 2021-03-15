@@ -231,7 +231,7 @@ class GAN(gandy.models.models.UncertaintyModel):
         """
         # save model
         # filename could be a path or end with .h5
-        self._model.save(filename)
+        self._model.model.save(filename)
         return None
 
     @classmethod
@@ -254,11 +254,14 @@ class GAN(gandy.models.models.UncertaintyModel):
             path_to_model = filename
             model = tf.keras.models.load_model(path_to_model)
         # get x and y shape
-        xshape = model.input_shape[1:]
-        yshape = model.layers[-1].get_config()['event_shape']
+        input_shapes = model.input_shape
+        xshape = input_shapes[2]
+        yshape = input_shapes[1]
+        noise_shape = input_shapes[0]
         # instantiate
         instance = cls.__new__(cls)
         instance._xshape = xshape
         instance._yshape = yshape
         instance._model = model
+        instance._model.noise_shape = noise_shape
         return instance
