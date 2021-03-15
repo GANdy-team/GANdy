@@ -16,7 +16,7 @@ ctions of target values and uncertainties.
     predictions, uncertainties = cfr.predict(Xst)
 
     Score the model on the test set using an mse metric:
-    score = cfr.evaluate(Xs, Ys, metric='mse')
+    score = cfr.evaluate(Xs, Ys, metric='MSE')
 """
 # imports
 from typing import Type, Tuple, Callable
@@ -44,9 +44,18 @@ class ucGaussianProcess(gandy.models.models.UncertaintyModel):
             shape of example data, excluding the first dimension
         yshape (tuple of int):
             shape of target data, excluding the first dimension
+        model_type (str):
+            'regressor' or 'classifier'
         **kwargs:
             keyword arguments to pass to the build method
     """
+    def __init__(self,
+                 xshape: Tuple[int],
+                 yshape: Tuple[int],
+                 model_type: str,
+                 **kwargs):
+        super().__init__(xshape, yshape, model_type=model_type, **kwargs)
+        return
 
     def _build(self,
                model_type: str,
@@ -90,9 +99,9 @@ class ucGaussianProcess(gandy.models.models.UncertaintyModel):
         associated with the covariance fit, so None is returned.
 
         Args:
-            Xs (Array):
+            Xs (ndarray):
                 Examples data to train on.
-            Ys (Array):
+            Ys (ndarray):
                 Label data that is targeted for metrics for training.
             **kwargs:
                 Keyword arguments passed to model's fit method.
@@ -119,10 +128,9 @@ class ucGaussianProcess(gandy.models.models.UncertaintyModel):
                 keyword arguments passed to predictor's predict method
 
         Returns:
-            tuple of ndarray:
-                array of predictions of targets with the same length as Xs
-                array of prediction uncertainties of targets withthe same
-                length as Xs
+            predictions (ndarray): predictions with the same length as Xs
+            uncertainties (ndarray):
+                uncertainties on returned predictions, same length
         """
         if isinstance(self.model,
                       sklearn.gaussian_process.GaussianProcessRegressor):
@@ -142,7 +150,7 @@ class ucGaussianProcess(gandy.models.models.UncertaintyModel):
         """Alternative to passing model_type as 'regressor' to object
         initialization.
 
-        Arguments:
+        Args:
             *args:
                 positional arguments to pass to init
             **kwargs:
@@ -155,7 +163,7 @@ class ucGaussianProcess(gandy.models.models.UncertaintyModel):
         """Alternative to passing model_type as 'classifier' to object
         initialization.
 
-        Arguments:
+        Args:
             *args:
                 positional arguments to pass to init
             **kwargs:

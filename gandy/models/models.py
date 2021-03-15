@@ -11,6 +11,7 @@ ish building, training, predicting, and evaluateing.
 """
 
 # imports
+import sys
 import time
 from typing import Tuple, Iterable, Any, Type, Callable, Union
 
@@ -27,12 +28,13 @@ class NotImplimented(Exception):
     methods.
 
     Args:
-        inst - the class instance that raises this exception
+        inst (object): the class instance that raises this exception
+        caller (str): method name
     """
 
-    def __init__(self, inst):
-        self.message = """This method has not yet been implimented by
- this class: `{}`.""".format(inst.__class__)
+    def __init__(self, inst, caller):
+        self.message = """This method {} has not yet been implimented by
+ this class: `{}`.""".format(caller, inst.__class__)
         super().__init__(self.message)
         return
 
@@ -59,13 +61,13 @@ class UncertaintyModel:
             keyword arguments to pass to the build method
 
     Attributes:
-        sessions (list of tuple):
+        sessions (dict):
             Stored losses from training sessions. When train is called, a new
-            tuple is appended of (session name, losses) where losses is
+            item is added of `session name`: `losses` where losses is
             determined by the output of _train.
     """
     metrics = gandy.quality_est.metrics
-    """Available metrics defined in gandy.metrics"""
+    """Available metrics defined in gandy.quality_est.metrics.metrics"""
 
     def __init__(self,
                  xshape: Tuple[int],
@@ -92,9 +94,8 @@ class UncertaintyModel:
             Ys (iterable): label data to check, if present. Default None.
 
         Returns:
-            tuple of ndarrays:
-                Xs, the formated X data
-                Ys, the formated Y data if present
+            Xs (ndarray): the formated X data
+            (optional) Ys (ndarray): the formated Y data if present
         """
         if hasattr(Xs, 'shape'):
             pass
@@ -154,26 +155,25 @@ class UncertaintyModel:
         self._model = self._build(**kwargs)
         return
 
-    def _build(self, *args, **kwargs) -> Callable:
+    def _build(self, **kwargs) -> Callable:
         """Construct and return the predictor.
 
         Must be implimented in child class. To creates and returns a predictor
         with keyword argument inputs. Raises not implimented warning.
 
         Args:
-            *args:
-                arguments defined in child
             **kwargs:
                 keyword arguments/hyperparemeters for predictor init.
 
         Raises:
             NotImplimented:
                 warning that child class has not overloaded this method
+
         Returns:
             None:
                 children will return the predictor
         """
-        raise NotImplimented(self)
+        raise NotImplimented(sys._getframe().f_code.co_name, self)
         model = None
         return model
 
@@ -199,7 +199,7 @@ class UncertaintyModel:
                 use clock time.
             metric (str):
                 Metric to use, a key in UncertaintyModel.metrics or a metric
-                objectthat takes as input true, predicted, and uncertainty
+                object that takes as input true, predicted, and uncertainty
                 values.
             **kwargs:
                 Keyword arguments to pass to `_train` and assign non-default \
@@ -219,7 +219,6 @@ class UncertaintyModel:
     def _train(self,
                Xs: Array,
                Ys: Array,
-               *args,
                metric: Callable = None,
                **kwargs) -> Any:
         """Train the predictor.
@@ -236,8 +235,6 @@ class UncertaintyModel:
             metric (callable):
                 Metric to use, takes true, predicted, uncertainties to
                 compute a score.
-            *args:
-                Positional arguments to be defined by child.
             **kwargs:
                 Keyword arguments to assign non-default training parameters or
                 pass to nested functions.
@@ -247,7 +244,7 @@ class UncertaintyModel:
                 Desired tracking of losses during training. Not implimented
                 here, and returns None.
         """
-        raise NotImplimented(self)
+        raise NotImplimented(sys._getframe().f_code.co_name, self)
         losses = None
         return losses
 
@@ -270,12 +267,11 @@ class UncertaintyModel:
             **kwargs: keyword arguments to pass to `_predict`
 
         Returns:
-            tuple of ndarray:
-                array of predictions of targets with the same length as Xs
-                array of prediction uncertainties of targets withthe same
-                    length as Xs
-                (optional) array of flags of uncertain predictions higher
-                    than threshhold of same length as Xs
+            predictions (ndarray): predictions with the same length as Xs
+            uncertainties (ndarray):
+                uncertainties on returned predictions, same length
+            (optional) flags (ndarray): bools of uncertain predictions higher
+                than threshhold of same length as predictions.
         """
         Xs_ = self.check(Xs)
         if uc_threshold is not None:
@@ -307,10 +303,9 @@ class UncertaintyModel:
 
     def _predict(self,
                  Xs: Array,
-                 *args,
                  **kwargs):
-        """Make predictions on a set of data and return predictions and uncertain-
-        ty arrays.
+        """Make predictions on a set of data and return predictions and
+        uncertainty arrays.
 
         Must be implimented by child class. Makes predictions on data using
         model at self.model and any other stored objects.
@@ -318,24 +313,21 @@ class UncertaintyModel:
         Args:
             Xs (ndarray):
                 Example data to make predictions on.
-            *args:
-                Positional arguments to be defined by child.
             **kwargs:
                 Keyword arguments for predicting.
 
         Returns:
-            tuple of ndarray:
-                array of predictions of targets with the same length as Xs
-                array of prediction uncertainties of targets withthe same
-                    length as Xs
+            predictions (ndarray): predictions with the same length as Xs
+            uncertainties (ndarray):
+                uncertainties on returned predictions, same length
         """
-        raise NotImplimented(self)
+        raise NotImplimented(sys._getframe().f_code.co_name, self)
         predictions, uncertainties = None, None
         return predictions, uncertainties
 
     def _get_metric(self, metric_in: Union[None, Callable, str]):
         """Accesses gandy metrics to retrieve the correct metric depending on
-        input
+        input.
 
         Args:
             metric_in (str, callable, None):
@@ -392,7 +384,6 @@ class UncertaintyModel:
         metric_value, metric_values = metric(Ys_, predictions, uncertainties)
         metric_values = numpy.array(metric_values).astype(numpy.float64)
         metric_values = metric_values.reshape(len(Xs), -1)
-
         return metric_value, metric_values
 
     def save(self,
@@ -405,7 +396,7 @@ class UncertaintyModel:
             filename (str):
                 path to save model to, no extension
         """
-        raise NotImplimented(self)
+        raise NotImplimented(sys._getframe().f_code.co_name, self)
         return
 
     @classmethod
@@ -423,7 +414,7 @@ class UncertaintyModel:
         Returns:
             instance of class: the loaded UncertaintyModel
         """
-        raise NotImplimented(cls)
+        raise NotImplimented(sys._getframe().f_code.co_name, cls)
         instance = None
         return instance
 
