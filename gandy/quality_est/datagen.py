@@ -22,14 +22,14 @@ def generate_analytical_data(to_csv=True):
     x1 = np.random.uniform(0, 10, 10000)
     x2 = np.random.uniform(0, 10, 10000)
     mu = 0
-    sigma = (x1 + x2) / 100
+    sigma = (x1 + x2) / 10
 
     def f(x1, x2):
         f_data = 2*x1 + x2
         return f_data
 
     def g(x1, x2):
-        g_data = np.random.normal(mu, np.abs(sigma), 1000)
+        g_data = np.random.normal(mu, np.abs(sigma), 10000)
         return g_data
 
     noise = g(x1, x2)

@@ -298,7 +298,7 @@ class SubjectObjective:
         # . train model with hyparms and self kwargs
         # . score model with self kwargs
         instance.train(*train_data, **self.kwargs, **hyparams)
-        single_loss = instance.score(*val_data, **self.kwargs, **hyparams)
+        single_loss, _ = instance.score(*val_data, **self.kwargs, **hyparams)
         return single_loss
 
     def __call__(self, trial: Trial) -> float:
@@ -497,6 +497,7 @@ class OptRoutine:
                  Xs: Iterable,
                  Ys: Iterable,
                  search_space=None,
+                 study_kwargs: dict = {},
                  **kwargs):
         # pseudocode
         # . assert class type is child of uncertainty model
@@ -520,6 +521,7 @@ len(Xs) = {}, len(Ys) = {}'.format(len(Xs), len(Ys)))
 
         self.search_space = search_space
         self.all_kwargs = kwargs
+        self.study_kwargs = study_kwargs
         return
 
     def _set_param_space(self):
@@ -576,6 +578,7 @@ len(Xs) = {}, len(Ys) = {}'.format(len(Xs), len(Ys)))
             self.subject,
             self.Xs,
             self.Ys,
+            self.param_space,
             **self.all_kwargs
         )
         self.objective = objective
@@ -593,7 +596,7 @@ len(Xs) = {}, len(Ys) = {}'.format(len(Xs), len(Ys)))
         # pseudocode
         # . create study optuna.create_study
         # . set to self.study
-        study = optuna.create_study(**self.all_kwargs)
+        study = optuna.create_study(**self.study_kwargs)
         self.study = study
         return
 
@@ -626,12 +629,11 @@ len(Xs) = {}, len(Ys) = {}'.format(len(Xs), len(Ys)))
         else:
             pass
 
-        self.all_kwargs.update(kwargs)
 
         self._set_objective()
         self._set_study()
 
-        self.study.optimize(self.objective, **self.all_kwargs)
+        self.study.optimize(self.objective, **kwargs)
         best_score = self.study.best_value
         self.best_params = self.study.best_params
         return best_score
@@ -659,5 +661,7 @@ len(Xs) = {}, len(Ys) = {}'.format(len(Xs), len(Ys)))
             pass
 
         best_model = self.subject(**self.best_params, **self.all_kwargs)
-        best_model.fit(**self.best_params, **self.all_kwargs)
+        best_model.train(self.Xs, self.Ys, 
+                         **self.best_params, 
+                         **self.all_kwargs)
         return best_model

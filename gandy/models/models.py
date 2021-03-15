@@ -381,9 +381,8 @@ class UncertaintyModel:
 
         predictions, uncertainties = self.predict(Xs_, **kwargs)
 
-        metric_value, metric_values = metric(Ys_, predictions, uncertainties)
+        metric_value, metric_values = metric(Ys_, predictions, uncertainties).calculate()
         metric_values = numpy.array(metric_values).astype(numpy.float64)
-        metric_values = metric_values.reshape(len(Xs), -1)
         return metric_value, metric_values
 
     def save(self,
