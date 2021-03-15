@@ -2,13 +2,13 @@
 Automatically creating and comparing supervised machine learning models capable of returning uncertainty estimates in addition to predictions.
 
 __Current Functionality__:
-- [ ] Instantialize, train, and use uncertainty models
-- - [ ] Gaussian Processes
-- - [ ] Bayesian Neural Networks
-- - [ ] uncertainty GANs
-- [ ] Judge the quality of produced uncertainties with uncertainty metrics
+- [x] Instantialize, train, and use uncertainty models
+- - [x] Gaussian Processes
+- - [x] Bayesian Neural Networks
+- - [x] uncertainty GANs
+- [x] Judge the quality of produced uncertainties with uncertainty metrics
+- [x] Comparison of model structures
 - [ ] Model optimization to uncertainty metrics
-- [ ] Comparison of model structures
 
 ## Installation
 In console, execute the following command where <code>package_path</code> is the path to the folder containing this Readme (GANdy):
