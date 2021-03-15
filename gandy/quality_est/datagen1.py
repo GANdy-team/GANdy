@@ -55,6 +55,6 @@ def create_data(to_csv = True):
 
 
 	if to_csv:
-		gen_data.to
+		gen_data.to_csv("test_data_qm9.csv", index=False, sep = ',')
 
 	return gen_data
