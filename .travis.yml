@@ -6,8 +6,6 @@ language: python
 matrix:
     include:
         - python: 3.6
-        - python: 3.7
-        - python: 3.8
 
 # what branches should be evaluated
 branches:
@@ -31,7 +29,7 @@ install:
 
 # a list of commands to run before the main script
 before_script:
-    - flake8 codebase
+    - flake8 gandy
 
 # the actual commands to run
 script:
