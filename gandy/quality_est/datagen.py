@@ -72,20 +72,15 @@ def generate_qm9_noise_data(x1, x2, y, to_csv=True):
     x1 = X1.tolist()
     x2 = X2.tolist()
     y_l = Y_a.tolist()
-    length = Y_a.shape
+    length = len(Y_a)
 
-    # set the number of noise added
-    n = np.random.uniform(0, length, 1).astype(np.int)
-    # n random values
-    ni = np.random.uniform(0, length, n)
-    an = len(ni)
 
     # add noise to n numbers of y
     Noise = []
-    for i in range(an):
+    for i in range(length):
         mu = 0
         sigma = (x1[i] + x2[i]) / 2
-        noise = np.random.normal(mu, np.abs(sigma), n)
+        noise = np.random.normal(mu, np.abs(sigma), length)
         g = noise.tolist()
         Noise.append(g[i])
         y_l[i] += g[i]
