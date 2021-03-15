@@ -232,6 +232,7 @@ class BNN(gandy.models.models.UncertaintyModel):
         # filter out kwargs
         fc_kwargs = {key: val for (key, val) in kwargs.items() \
                      if key in inspect.getfullargspec(self.model.fit)[0]}
+        print(inspect.getfullargspec(self.model.fit)[0])
         
         losses = self.model.fit(Xs, Ys, **fc_kwargs)
         return losses
