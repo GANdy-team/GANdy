@@ -5,7 +5,32 @@ import pandas as pd
 from pandas import Series, DataFrame
 from deepchem.molnet import load_qm9
 
-def generate_analytical_data(x1,x2,y):
+def generate_analytical_data(to_csv = True):
+
+	x1 = np.random.uniform(0, 1000, 1000)
+	x2 = np.random.uniform(0, 1000, 1000)
+	mu = 0
+	sigma = (x1+x2)/2
+
+	def f(x1, x2):
+    		f_data = np.sin(x1)+np.cos(x2)
+    		return f_data
+
+	def g(x1, x2):
+    		g_data = np.random.normal(mu, np.abs(sigma), 1000)
+    		return g_data
+
+	y = f(x1, x2) + g(x1, x2)
+
+	gen_data = pd.DataFrame({'X1':x1, 'X2':x2, 'Y':y})
+    
+	if to_csv:
+		gen_data.to_csv("analytical_data.csv", index=False, sep = ',')
+
+	return gen_data
+
+
+def generate_qm9_noise_data(x1,x2,y):
 
     #load data
 	qm9_tasks, datasets, transformers = load_qm9()
@@ -43,7 +68,7 @@ def generate_analytical_data(x1,x2,y):
 
     #save to_csv:
 	dataframe = pd.DataFrame({'x1_'+c1:X1,'x2_'+c2:X2,'y_'+c3:y_l})
-	dataframe.to_csv("y_gen_data.csv", index=False, sep = ',')
-	gen_data = pd.read_csv('y_gen_data.csv')
+	dataframe.to_csv("qm9_noise_data.csv", index=False, sep = ',')
+	gen_data = pd.read_csv('qm9_noise_data.csv')
 
 	return gen_data
