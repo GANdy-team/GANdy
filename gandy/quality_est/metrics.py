@@ -38,15 +38,12 @@ class Metric:
         Initializes an instance of the metric class, including the
         predictions, uncertainties (optional), and real data
         necessary for comparison.
-
         Arg:
             predictions(ndarray):
                 Array of predictions generated from the uncertainty model
-
             real(ndarray):
                 Array of real values that you want to compare the uncertainty
                 model ouput to (eg. experimental data)
-
             uncertainties(ndarray):
                 Optional argument which contains array of uncertainty values
                 generated from the uncertainty module
@@ -54,7 +51,6 @@ class Metric:
         self.predictions = predictions
         self.real = real
         self.uncertainties = uncertainties
-        self.calculate()
         return
 
     def calculate(self, **kwargs):
@@ -76,21 +72,15 @@ class MSE(Metric):
         '''
         Method that defines the mathematical formula necessary to compute the
         MSE.
-
             Args:
-
                 **kwargs:
                     Necessary keyword arguments to be passed into calculate()
                     method
-
             Returns:
-
                 MSE_value(float):
                     Total value of the MSE computed
-
                 MSE_values(ndarray):
                     An array of MSE scores for each prediction
-
         '''
         if self.uncertainties is not None:
             raise TypeError("MSE metric does not take uncertainties as arg")
@@ -122,21 +112,15 @@ class RMSE(Metric):
         '''
         Method that defines the mathematical formula necessary to compute the
         RMSE.
-
             Args:
-
                 **kwargs:
                     Necessary keyword arguments to be passed into calculate()
                     method
-
             Returns:
-
                 RMSE_value(float):
                     Total value of the RMSE computed
-
                 RMSE_values(ndarray):
                     Array of RMSE values for each prediction
-
          '''
         if self.uncertainties is not None:
             raise TypeError("RMSE metric does not take uncertainties as arg")
@@ -167,18 +151,13 @@ class F1(Metric):
         '''
         Method that defines the mathematical formula necessary to compute
         the F1 score.
-
             Args:
-
                 **kwargs:
                     Necessary keyword arguments to be passed into calculate()
                     method
-
                 Returns:
-
                     F1_value(float):
                         Value of the F1 score computed
-
          '''
         if self.uncertainties is not None:
             raise TypeError("F1 metric does not take uncertainties as arg")
@@ -198,18 +177,13 @@ class Accuracy(Metric):
         '''
         Method that defines the mathematical formula necessary to compute
         the Accuracy.
-
             Args:
-
                 **kwargs:
                     Necessary keyword arguments to be passed into calculate()
                     method
-
                 Returns:
-
                     Accuracy_value(float):
                         Value of the Accuracy score computed
-
          '''
         if self.uncertainties is not None:
             raise TypeError("Accuracy metric does not take uncertainties as\
@@ -217,3 +191,38 @@ class Accuracy(Metric):
         else:
             Accuracy_value = accuracy_score(self.real, self.predictions)
         return Accuracy_value
+
+
+class UCP(Metric):
+    '''
+    Uncertainty coverage probability class which defines the structure used
+    for computing the UCP between the passed in datasets. Inherets the
+    properties of the parent class Metrics.
+    '''
+
+    def calculate(self, **kwargs) -> float:
+        '''
+        Method that defines the mathematical formula necessary to compute
+        the UCP.
+            Args:
+                **kwargs:
+                    Necessary keyword arguments to be passed into calculate()
+                    method
+                Returns:
+                    UCP_value(float):
+                        Value of the UCP score computed
+         '''
+        if self.uncertainties is None:
+            raise TypeError("UCP metric requires uncertainties as arg")
+        else:
+            UCP_value = 0
+            for i in range(len(self.predictions)):
+                if ((self.predictions[i] - self.uncertainties[i]) <=
+                        self.real[i] and
+                    (self.predictions[i] + self.uncertainties[i]) >=
+                        self.real[i]):
+                    UCP_value += 1
+                else:
+                    pass
+
+        return UCP_value*(1/len(self.predictions))
