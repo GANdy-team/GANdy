@@ -1,4 +1,4 @@
-### Use cases
+## Use cases
 1. Creating uncertainty prediction models
 	- *User* - Provide an architecture option, and hyperparameters specified
 	- *Function* -  Initiate a model of the desired class
