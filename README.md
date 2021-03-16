@@ -1,4 +1,4 @@
-# GANdy [![Build Status](https://travis-ci.org/GANdy-team/GANdy.svg?branch=main)](https://travis-ci.org/GANdy-team/GANdy)
+# GANdy [![Build Status](https://travis-ci.org/GANdy-team/GANdy.svg?branch=main)](https://travis-ci.org/GANdy-team/GANdy) [![Coverage Status](https://coveralls.io/repos/github/GANdy-team/GANdy/badge.svg?branch=main)](https://coveralls.io/github/GANdy-team/GANdy?branch=main)
 Automatically creating and comparing supervised machine learning models capable of returning uncertainty estimates in addition to predictions.
 
 __Current Functionality__:
@@ -7,13 +7,18 @@ __Current Functionality__:
 - - [x] Bayesian Neural Networks
 - - [x] uncertainty GANs
 - [x] Judge the quality of produced uncertainties with uncertainty metrics
-- [x] Comparison of model structures
+- [ ] Automated comparison of model structures
 - [ ] Model optimization to uncertainty metrics
 
 ## Installation
+Install and activate the environment with `environment.yml` by:
+> `conda env create -f environment.yml`
+
+> `conda activate gandy_env`
+
 In console, execute the following command where <code>package_path</code> is the path to the folder containing this Readme (GANdy):
 > <code>pip install package_path</code>
-> 
+
 It can then be imported on the installed environment as <code>gandy</code>.
 
 ## Repo structure
@@ -21,9 +26,14 @@ It can then be imported on the installed environment as <code>gandy</code>.
 GANdy
 -----
 setup.py                  # package installation
-environment.yml           # development environment
+environment.yml           # environment
+devenv.yml                # development environment - contains packages for plotting
 examples/                 
+|-BNN_demo.ipynb          # demo of bayensian NN as an uncertainty model
 |-GPs_Showcase.ipynb      # demo of gaussian processes as an uncertainty model
+|-Metrics_demo.ipynb      # demonstration of using gandy metrics
+|-Package_demo.ipynb      # showcase of current package functionality
+|-GAN_demo.ipynb          # demo of GANs as an uncertainty model
 gandy/
 |-tests/
 |-models/
@@ -33,7 +43,10 @@ gandy/
 | |-gans.py               # GANs as an uncertainty model
 | |-gps.py                # gaussian processes as an uncertainty model
 |-quality_est/
+| |-datagen.py            # functions to generate synthetic uncertainty data
 | |-metrics.py            # tools for evaluating returned uncertainties and predictions
+|-optimization/
+| |-hypersearch.py        # tools for hyperparameter optimization
 
 ```
 
@@ -51,7 +64,7 @@ See <examples> for demonstrations on predicting uncertainties with the available
 
 ## For developers
 ### Installation
-To install the development environment <code>conda env create --file environment.yml</code>.
+To install the development environment <code>conda env create --file devenv.yml</code>.
 If any new installed development dependancies, add them to the environment.yml environment file by Manually adding the dependency, eg. 
 >  \- python=3.6.*
 
