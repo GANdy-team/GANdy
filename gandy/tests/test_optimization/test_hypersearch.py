@@ -183,7 +183,7 @@ class TestSubjectObjective(unittest.TestCase):
         """does the method instantialize and call the correct model methods"""
         subject = opt.SubjectObjective(**self.inputs, xshape=(5,), keyword=5)
         mocked_inst = unittest.mock.MagicMock()
-        mocked_inst.score.return_value = 'score'
+        mocked_inst.score.return_value = 'score', 'scores'
         hyparams = {'hp1': 1, 'hp2': 2}
         train_data = ('Xst', 'Yst')
         val_data = ('Xsv', 'Ysv')
@@ -382,11 +382,13 @@ class TestOptRoutine(unittest.TestCase):
                                  keyword=5)
         mocked__set_param = unittest.mock.MagicMock()
         subject._set_param_space = mocked__set_param
+        subject.param_space = 'param_space'
         # set the objective
         subject._set_objective()
         mocked_objective.assert_called_with(subject.subject,
                                             subject.Xs,
                                             subject.Ys,
+                                            subject.param_space,
                                             **subject.all_kwargs)
         self.assertEqual(subject.objective, 'objective')
         mocked__set_param.assert_called()
@@ -401,10 +403,11 @@ class TestOptRoutine(unittest.TestCase):
                                  Ys=numpy.array([1, 2, 3]),
                                  search_space={'hyp1': (1, 10),
                                                'hyp2': ['a', 'b']},
-                                 keyword=5)
+                                 keyword=5,
+                                 study_kwargs={'study': 'value'})
         subject._set_study()
         self.assertTrue(subject.study == 'study')
-        mocked_cstudy.assert_called_with(**subject.all_kwargs)
+        mocked_cstudy.assert_called_with(**subject.study_kwargs)
         return
 
     def test_optimize(self):
@@ -436,11 +439,10 @@ class TestOptRoutine(unittest.TestCase):
         mocked_set_obj.assert_called()
         mocked_set_study.assert_called()
         mocked_study.optimize.assert_called_with(
-            subject.objective, **subject.all_kwargs)
+            subject.objective, keyword2=10)
         self.assertTrue(best_score is mocked_study.best_value)
         self.assertTrue(subject.best_params is mocked_study.
                         best_params)
-        self.assertTrue('keyword2' in subject.all_kwargs.keys())
         return
 
     def test_train_best(self):
@@ -464,7 +466,9 @@ class TestOptRoutine(unittest.TestCase):
         model = subject.train_best()
         mocked_UM.assert_called_with(**subject.best_params,
                                      **subject.all_kwargs)
-        mocked_UMin.fit.assert_called_with(**subject.best_params,
-                                           **subject.all_kwargs)
+        mocked_UMin.train.assert_called_with(subject.Xs,
+                                             subject.Ys,
+                                             **subject.best_params,
+                                             **subject.all_kwargs)
         self.assertTrue(model is mocked_UMin)
         return

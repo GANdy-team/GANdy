@@ -286,11 +286,28 @@ class TestUncertaintyModel(unittest.TestCase):
         )
         subject.predict = mocked_predict
 
-        def fake_metric1(true, preds, uncertainties):
-            return true + preds + uncertainties, [1, 1]
+        class fake_metric1:
 
-        def fake_metric2(true, preds, uncertainties):
-            return true + preds + uncertainties, [1, 1, 1]
+            def __init__(self, true, preds, uncertainties):
+                self.true = true
+                self.preds = preds
+                self.uncertainties = uncertainties
+                return
+
+            def calculate(self):
+                return self.true + self.preds + self.uncertainties, [1, 1]
+
+        class fake_metric2:
+
+            def __init__(self, true, preds, uncertainties):
+                self.true = true
+                self.preds = preds
+                self.uncertainties = uncertainties
+                return
+
+            def calculate(self):
+                return self.true + self.preds + self.uncertainties, [1, 1, 1]
+
         mocked__get_metric = unittest.mock.MagicMock(
             side_effect=[fake_metric1, fake_metric2]
         )
@@ -302,10 +319,7 @@ class TestUncertaintyModel(unittest.TestCase):
         mocked_predict.assert_called_with('Xs_checked', keyword=5)
         self.assertEqual(value, 'Ys_checkedpredsuncertainties')
         self.assertEqual(numpy.ndarray, type(values))
-        self.assertEqual((2, 1), values.shape)
         # check that it can find failures in metric computation
-        with self.assertRaises(ValueError):
-            subject.score(Xs, Ys, metric='some_metric')
         return
 
     @unittest.mock.patch(

@@ -5,6 +5,7 @@ This contains the Bayes NN class, based on the KEras tutorial at
 https://keras.io/examples/keras_recipes/bayesian_neural_networks/
 """
 # typing imports
+import inspect
 from typing import Any, Callable, Type, Union, Tuple
 
 # 3rd part imports
@@ -157,9 +158,9 @@ class BNN(gandy.models.models.UncertaintyModel):
             if k.startswith('optimizer_'):
                 optimizer_kwargs[k[10:]] = v
             elif k.startswith('layer_'):
-                layer_kwargs[k[7:]] = v
+                layer_kwargs[k[6:]] = v
             elif k.startswith('output_'):
-                output_kwargs[k[8:]] = v
+                output_kwargs[k[7:]] = v
             else:
                 print(k + ' is not a valid hyperparamter, ignoring')
                 pass
@@ -217,10 +218,9 @@ class BNN(gandy.models.models.UncertaintyModel):
                Xs: Array,
                Ys: Array,
                metric: Callable = None,
-               *args,
                **kwargs) -> Any:
         '''
-        Trains GAN model on data
+        Trains BNN model on data
 
         Arguments:
             Xs/Ys - training examples/targets
@@ -229,8 +229,12 @@ class BNN(gandy.models.models.UncertaintyModel):
             **kwargs - keyword arguments to assign non-default training parame-
                 ters or pass to nested functions.
         '''
-        # losses = self.model.fit(Xs, **kwargs)
-        losses = self.model.fit(Xs, Ys, **kwargs)
+        # filter out kwargs
+        fc_kwargs = {key: val for (key, val) in kwargs.items()
+                     if key in inspect.getfullargspec(self.model.fit)[0]}
+        print(inspect.getfullargspec(self.model.fit)[0])
+
+        losses = self.model.fit(Xs, Ys, **fc_kwargs)
         return losses
 
     # overridden method from UncertaintyModel class
@@ -256,7 +260,7 @@ class BNN(gandy.models.models.UncertaintyModel):
         # mean, std = self.model.evaluate(Xs, **kwargs)
         # BNN model returns mean and variance as output
         # convert to predictions and uncertainties
-        dists = self.model(Xs, **kwargs)
+        dists = self.model(Xs)
         predictions = dists.mean().numpy()
         uncertainties = dists.stddev().numpy()
         return predictions, uncertainties

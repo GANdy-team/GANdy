@@ -351,7 +351,7 @@ class UncertaintyModel:
     def score(self,
               Xs: Iterable,
               Ys: Iterable,
-              metric: Union[str, Callable],
+              metric: Union[str, Callable] = 'MSE',
               **kwargs) -> Tuple[float, Array]:
         """Make predictions and score the results according to a defined metric.
 
@@ -381,10 +381,11 @@ class UncertaintyModel:
 
         predictions, uncertainties = self.predict(Xs_, **kwargs)
 
-        metric_value, metric_values = metric(Ys_, predictions, uncertainties)
+        metric_value, metric_values = metric(Ys_,
+                                             predictions,
+                                             uncertainties).calculate()
         metric_values = numpy.array(metric_values).astype(numpy.float64)
-        metric_values = metric_values.reshape(len(Xs), -1)
-        return metric_value, metric_values
+        return (metric_value, metric_values)
 
     def save(self,
              filename: str,
