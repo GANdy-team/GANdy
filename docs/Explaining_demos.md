@@ -27,6 +27,3 @@
 		2. Root Mean Squared Error (RMSE)
 	- Demonstrates uncertainty metric
 		1. Uncertainty Coverage Probability (UCP)
-
-## qm9_noise_data.csv
-	- QM9 data with random noise to test on models
