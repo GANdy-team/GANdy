@@ -62,7 +62,7 @@ It is desirable to have a tool in python that allows for the formulation of such
 ## Examples
 ![image](https://drive.google.com/uc?export=view&id=1Sm-3Imu2sNLvcRof2qscVS8dU0L5W0uC)
 
-See <examples> for more demonstrations on predicting uncertainties with the available tools.
+See examples folder for more demonstrations on predicting uncertainties with the available tools.
 
 ## For developers
 ### Installation
