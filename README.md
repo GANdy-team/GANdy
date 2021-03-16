@@ -60,7 +60,7 @@ It is desirable to have a tool in python that allows for the formulation of such
 \[1\] M. Lee and J. Seok, “Estimation with Uncertainty via Conditional Generative Adversarial Networks.” ArXiv 2007.00334v1
 
 ## Examples
-![Generative Adversarial Network (GAN)](https://drive.google.com/file/d/1Sm-3Imu2sNLvcRof2qscVS8dU0L5W0uC/view?usp=sharing)
+![image](https://drive.google.com/uc?export=view&id=1Sm-3Imu2sNLvcRof2qscVS8dU0L5W0uC)
 
 See <examples> for more demonstrations on predicting uncertainties with the available tools.
 
