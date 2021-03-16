@@ -292,7 +292,7 @@ class TestUncertaintyModel(unittest.TestCase):
                 self.true = true
                 self.preds = preds
                 self.uncertainties = uncertainties
-                return 
+                return
 
             def calculate(self):
                 return self.true + self.preds + self.uncertainties, [1, 1]
@@ -303,7 +303,7 @@ class TestUncertaintyModel(unittest.TestCase):
                 self.true = true
                 self.preds = preds
                 self.uncertainties = uncertainties
-                return 
+                return
 
             def calculate(self):
                 return self.true + self.preds + self.uncertainties, [1, 1, 1]

@@ -629,7 +629,6 @@ len(Xs) = {}, len(Ys) = {}'.format(len(Xs), len(Ys)))
         else:
             pass
 
-
         self._set_objective()
         self._set_study()
 
@@ -661,7 +660,7 @@ len(Xs) = {}, len(Ys) = {}'.format(len(Xs), len(Ys)))
             pass
 
         best_model = self.subject(**self.best_params, **self.all_kwargs)
-        best_model.train(self.Xs, self.Ys, 
-                         **self.best_params, 
+        best_model.train(self.Xs, self.Ys,
+                         **self.best_params,
                          **self.all_kwargs)
         return best_model

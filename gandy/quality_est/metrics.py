@@ -86,7 +86,6 @@ class MSE(Metric):
         if self.uncertainties is not None:
             warnings.warn("MSE metric does not take uncertainties as arg")
 
-
         # Define MSE formula using numpy methods
         MSE_value = np.mean(np.square(np.subtract(self.real, self.
                                                   predictions)))

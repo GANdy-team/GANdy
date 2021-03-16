@@ -381,7 +381,9 @@ class UncertaintyModel:
 
         predictions, uncertainties = self.predict(Xs_, **kwargs)
 
-        metric_value, metric_values = metric(Ys_, predictions, uncertainties).calculate()
+        metric_value, metric_values = metric(Ys_,
+                                             predictions,
+                                             uncertainties).calculate()
         metric_values = numpy.array(metric_values).astype(numpy.float64)
         return (metric_value, metric_values)
 

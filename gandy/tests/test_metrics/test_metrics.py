@@ -95,7 +95,6 @@ class TestF1(unittest.TestCase):
             subject = metrics.F1(predictions=np.array([0, 1, 2]),
                                  real="0, 1, 2").calculate()
 
-
         # check to make sure necessary attributes are inputted
         subject = metrics.F1(predictions=np.array([0, 1, 2]),
                              real=np.array([0, 1, 2]))
@@ -122,7 +121,6 @@ class TestAccuracy(unittest.TestCase):
         with self.assertRaises(ValueError):
             subject = metrics.Accuracy(predictions=np.array([0, 1, 2]),
                                        real="0, 1, 2").calculate()
-
 
         # check to make sure necessary attributes are inputted
         subject = metrics.Accuracy(predictions=np.array([0, 1, 2]),
