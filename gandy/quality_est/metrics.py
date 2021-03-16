@@ -1,7 +1,6 @@
 '''
 Metrics module: contains some relevent metrics to assess the performance of
 machine learning models.
-
 This module implements a parent metric class that contains necessary
 initialization arguments and automatically calls a calculate method to
 compute a given metric. Required intial arguments include the machine
@@ -16,6 +15,8 @@ input data provided.
 
 # Imports
 from typing import Type, Tuple
+
+from sklearn.metrics import f1_score, accuracy_score
 
 import numpy as np
 
@@ -36,24 +37,21 @@ class Metric:
         Initializes an instance of the metric class, including the
         predictions, uncertainties (optional), and real data
         necessary for comparison.
-
         Arg:
             predictions(ndarray):
                 Array of predictions generated from the uncertainty model
-
             real(ndarray):
                 Array of real values that you want to compare the uncertainty
                 model ouput to (eg. experimental data)
-
             uncertainties(ndarray):
                 Optional argument which contains array of uncertainty values
                 generated from the uncertainty module
         '''
-        # psuedocode
-        # set self.predictions
-        # set self.real
-        # set self.uncertainties
-        # call calculate function within init: self.calculate()
+        self.predictions = predictions
+        self.real = real
+        self.uncertainties = uncertainties
+        return
+
     def calculate(self, **kwargs):
         '''
         Empty calculate function
@@ -73,27 +71,32 @@ class MSE(Metric):
         '''
         Method that defines the mathematical formula necessary to compute the
         MSE.
-
             Args:
-
                 **kwargs:
                     Necessary keyword arguments to be passed into calculate()
                     method
-
             Returns:
-
                 MSE_value(float):
                     Total value of the MSE computed
-
                 MSE_values(ndarray):
                     An array of MSE scores for each prediction
-
         '''
-    # pseudocode
-    # define mathematical formula for MSE calculation using self.args
-    # iteration over arrays likely, then plug into defined formula
-        MSE_value = None
-        MSE_values = None
+        if self.uncertainties is not None:
+            raise TypeError("MSE metric does not take uncertainties as arg")
+
+        else:
+            # Define MSE formula using numpy methods
+            MSE_value = np.mean(np.square(np.subtract(self.real, self.
+                                                      predictions)))
+
+            # Define MSE_values as a list of MSE deviations between each data
+            # point
+            MSE_values = []
+
+            # Iterate through data points and add MSE value to list
+            for i in range(len(self.predictions)):
+                MSE_values.append((self.real[i] - self.predictions[i])**2)
+
         return MSE_value, MSE_values
 
 
@@ -108,33 +111,37 @@ class RMSE(Metric):
         '''
         Method that defines the mathematical formula necessary to compute the
         RMSE.
-
             Args:
-
                 **kwargs:
                     Necessary keyword arguments to be passed into calculate()
                     method
-
             Returns:
-
                 RMSE_value(float):
                     Total value of the RMSE computed
-
                 RMSE_values(ndarray):
                     Array of RMSE values for each prediction
-
          '''
-    # pseudocode
-    # define mathematical formula for RMSE calculations using self.args
-    # iteration over arrays and plug into defined formula
-        RMSE_value = None
-        RMSE_values = None
+        if self.uncertainties is not None:
+            raise TypeError("RMSE metric does not take uncertainties as arg")
+        else:
+            # Define RMSE using numpy methods
+            RMSE_value = np.sqrt(np.mean(np.subtract(self.real, self.
+                                                     predictions)**2))
+
+            # Define RMSE_values as a list of RMSE deviations between data
+            # points
+            RMSE_values = []
+
+            for i in range(len(self.predictions)):
+                RMSE_values.append(np.sqrt((self.real[i] - self.predictions[i]
+                                            )**2))
+
         return RMSE_value, RMSE_values
 
 
 class F1(Metric):
     '''
-    F1 score class which defines the structure used forcomputing the F1 score
+    F1 score class which defines the structure used for computing the F1 score
     between the passed in datasets. Inherets the properties of the parent
     class Metrics.
     '''
@@ -142,22 +149,44 @@ class F1(Metric):
     def calculate(self, **kwargs) -> float:
         '''
         Method that defines the mathematical formula necessary to compute
-        the RMSE.
-
+        the F1 score.
             Args:
-
                 **kwargs:
                     Necessary keyword arguments to be passed into calculate()
                     method
-
                 Returns:
-
                     F1_value(float):
                         Value of the F1 score computed
-
          '''
-    # pseudocode
-    # define mathematical formula for F1 calculation using self.args variables
-    # iteration over arrays and plug into formula
-        F1_value = None
+        if self.uncertainties is not None:
+            raise TypeError("F1 metric does not take uncertainties as arg")
+        else:
+            F1_value = f1_score(self.real, self.predictions, average='macro')
         return F1_value
+
+
+class Accuracy(Metric):
+    '''
+    Accuracy class which defines the structure used for computing the
+    accuracy score between the passed in datasets. Inherets the properties of
+    the parent class Metrics.
+    '''
+
+    def calculate(self, **kwargs) -> float:
+        '''
+        Method that defines the mathematical formula necessary to compute
+        the Accuracy.
+            Args:
+                **kwargs:
+                    Necessary keyword arguments to be passed into calculate()
+                    method
+                Returns:
+                    Accuracy_value(float):
+                        Value of the Accuracy score computed
+         '''
+        if self.uncertainties is not None:
+            raise TypeError("Accuracy metric does not take uncertainties as\
+                arg")
+        else:
+            Accuracy_value = accuracy_score(self.real, self.predictions)
+        return Accuracy_value

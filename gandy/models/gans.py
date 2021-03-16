@@ -1,29 +1,34 @@
-'''
+"""
+This class implements a GAN using deepchem's GAN class.
+
 Deepchem's tutorial on GANs (14_Conditional_Generative_Adversarial_Networks)
 can be found here:
 https://github.com/deepchem/deepchem/blob/master/examples/tutorials/
     14_Conditional_Generative_Adversarial_Networks.ipynb
-'''
+
+See dcgan for the implemented deepchem GAN and conditional GAN.
+"""
 
 # gandy imports
 import gandy.models.models
-import gandy.metrics
+import gandy.quality_est.metrics
 
 # deep learning imports
-import deepchem
-# import tensorflow as tf
+import gandy.models.dcgan as dcgan
+import tensorflow as tf
 
 # typing imports
-from typing import Tuple, Any, Object, Type
+from typing import Any, Type, Callable
 
 # typing
-import numpy
-Array = Type[numpy.ndarray]
+import numpy as np
+Array = Type[np.ndarray]
 
 
-class gan(deepchem.models.GAN, gandy.models.models.UncertaintyModel):
-    '''
+class GAN(gandy.models.models.UncertaintyModel):
+    """
     Implements Generative Adversarial Networks.
+
     A Generative Adversarial Network (GAN) is a type of generative model.
     It consists of two parts called the "generator" and the "discriminator".
     The generator takes random noise as input and transforms it into an
@@ -33,90 +38,118 @@ class gan(deepchem.models.GAN, gandy.models.models.UncertaintyModel):
     are trained together. The discriminator tries to get better and better
     at telling real from false data, while the generator tries to get better
     and better at fooling the discriminator.
+
     Thank you to deepchem at
     https://github.com/deepchem/deepchem/blob/master/deepchem/models/gan.py#L14-L442
     for the information about GANS.
-    This class builds off of the deepchem GAN class.
-    '''
-
-    def __init__(self,
-                 xshape: Tuple[int],
-                 yshape: Tuple[int],
-                 **kwargs):
-        '''
-        Initializes instance of a GAN
-        '''
-        # the MRO order of init calls is deepchem.models.GAN first,
-        # then gandy.models.models.UncertaintyModel
-        super(gan, self).__init__(xshape=xshape, yshape=yshape, **kwargs)
-
-    def create_generator(self, **kwargs):
-        '''
-        Creates the generator (as a keras model)
-        Saves self.generator as this model
-        '''
-        # adapted from deepchem tutorial 14:
-        # do something like:
-        # hyperparameters = **kwargs
-        # output_layer_dimension = self.xshape[0]
-        # noise_in = Input(shape=get_noise_input_shape())
-        # gen_dense_lay_1 = Dense(layer_one_dimension,
-        #                 activation=kwargs.activation)(noise_in)
-        # gen_outputs = Dense(output_layer_dimension,
-        #                 activation=kwargs.activation)(gen_dense_lay_1)
-        # make above code for loop s.t. num_layers is changeable parameter
-        # self.generator = tf.keras.Model(inputs=[noise_in],
-        #                 outputs=[gen_outputs])
-        return None
-
-    def create_discriminator(self, **kwargs):
-        '''
-        Creates the discriminator (as a keras model)
-        Saves self.discriminator as this model
-        '''
-        # adapted from deepchem tutorial 14:
-        # do something like:
-        # hyperparameters = **kwargs
-        # data_in = Input(shape=(output_layer_dimension,))
-        # discrim_lay_1 = Dense(layer_one_dimension,
-        #                 activation=activation)(data_in)
-        # discrim_prob = Dense(1, activation=tf.sigmoid)(discrim_lay_1)
-        # self.discriminator = tf.keras.Model(inputs=[data_in],
-        #                 outputs=[discrim_prob])
-        return None
-
-    def get_noise_input_shape(self, **kwargs) -> Tuple[int]:
-        '''
-        Returns the shape of the noise vector
-        '''
-        return  # noise.shape
-
-    def get_data_input_shapes(self, **kwargs) -> Tuple[int]:
-        '''
-        Returns the shape of the data, which should be xshape
-        '''
-        return self.xshape
+    """
 
     # overridden method from UncertaintyModel class
-    def _build(self, **kwargs) -> Object:
-        '''
-        Construct the model
-        '''
-        # do something like:
-        # self.create_generator(**kwargs)
-        # self.create_discriminator(**kwargs)
-        # self.n_classes = self.yshape
-        return {'generator': self.generator,
-                'discriminator': self.discriminator}
+    def _build(self, *args, **kwargs):
+        """
+        Construct the model.
+
+        This instantiates the deepchem gan as the model.
+
+        Arguments:
+            **kwargs - key word arguments for creating the generator
+                and discriminator. See dcgan.create_generator and
+                dcgan.create_discriminator for those kwargs.
+                type == dict
+
+        Returns:
+            model - Deepchem GAN model found in dcgan
+                type == Keras model
+        """
+        # get noise shape from kwargs
+        # default is 10 dimensional
+        noise_shape = kwargs.get('noise_shape', (10,))
+        # get n_classes from kwargs, default None
+        self.conditional = kwargs.get('conditional', True)
+
+        # get other kwargs as hyperparameters
+        hyperparams = {key: kwargs[key] for key in kwargs.keys() -
+                       {'noise_shape'}}
+
+        # instantiating the model as the deepchem gan
+        if self.conditional:
+            model = dcgan.CondDCGAN(self.xshape, self.yshape, noise_shape,
+                                    **hyperparams)
+        else:
+            model = dcgan.DCGAN(self.xshape, self.yshape, noise_shape,
+                                **hyperparams)
+        return model
+
+    def generate_data(self,
+                      Xs: Array,
+                      Ys: Array,
+                      batch_size: int):
+        """
+        Generating function.
+
+        Create a batch of bootstrapped data. _train helper function.
+        From deepchem tutorial 14.
+
+        Arguments:
+            Xs/Ys - training examples/targets
+                type == ndarray
+
+            batch_size - number of data points in a batch
+                type == int
+
+        Returns:
+            classes - array of targets sampled from Ys
+                type == ndarray
+
+            points - array of data points sampled from Xs
+                type == ndarray
+        """
+        # sample with replacement X, Y pairs of size batch_size
+        n = len(Xs)
+        indices = np.random.randint(0, high=n, size=(batch_size,))
+        features = Xs[indices]
+        targets = Ys[indices]
+        return targets, features
+
+    def iterbatches(self,
+                    Xs: Array,
+                    Ys: Array,
+                    batches: int):
+        """
+        Function that creates batches of generated data.
+
+        The deepchem fit_gan unction reads in a dictionary for training.
+        This creates that dictionary for each batch. _train helper function.
+        From deepchem tutorial 14.
+
+        Arguments:
+            Xs/Ys - training examples/targets
+                type == ndarray
+
+            batches - number of batches to train on
+                type == int
+
+        Yields:
+            batched_data - data split into batches
+                type == dict
+        """
+        # training loop
+        for i in range(batches):
+            targets, features = self.generate_data(Xs, Ys,
+                                                   self.model.batch_size)
+            batched_data = {self._model.conditional_inputs[0]: features,
+                            self._model.data_inputs[0]: targets}
+            yield batched_data
 
     # overridden method from UncertaintyModel class
     def _train(self,
                Xs: Array,
                Ys: Array,
-               *args,
+               batches: int = 50,
+               metric: Callable = None,
                **kwargs) -> Any:
-        '''
-        Trains GAN model on data
+        """
+        Train GAN model on data.
 
         Arguments:
             Xs/Ys - training examples/targets
@@ -124,21 +157,37 @@ class gan(deepchem.models.GAN, gandy.models.models.UncertaintyModel):
 
             **kwargs - keyword arguments to assign non-default training parame-
                 ters or pass to nested functions.
-        '''
-        losses = None
+
+        Returns:
+            losses - array of loss for each epoch
+                type == ndarray
+        """
+        # train GAN on data
+        # self.model = deepchem GAN instance
+        # generator + discriminator losses
+        losses = self._model.fit_gan(self.iterbatches(Xs, Ys, batches))
+        # compute metric here
+        if metric is not None:
+            losses[0] = metric(losses[0])  # gen
+            losses[1] = metric(losses[1])  # discrim
         return losses
 
     # overridden method from UncertaintyModel class
     def _predict(self,
                  Xs: Array,
-                 *args,
                  **kwargs):
-        '''
+        """
+        Predict on Xs.
+
         Arguments:
             Xs - example data to make predictions on
                 type == ndarray
 
             **kwargs - keyword arguments for predicting
+                 num_predictions - number of predictions to make
+                 to sample uncertainties
+                     type == int
+                     deafult == 100
 
         Returns:
             predictions - array of predictions of targets with the same length
@@ -148,96 +197,71 @@ class gan(deepchem.models.GAN, gandy.models.models.UncertaintyModel):
             uncertainties - array of prediction uncertainties of targets with
                 the same length as Xs
                 type == ndarray
-        '''
-        # pseudocode
+        """
         # adapted from deepchem tutorial 14:
-        # one_hot_Ys = deepchem.metrics.to_one_hot(Ys, self.n_classes)
-        # generated_points = gan.predict_gan_generator(
-        #                                 conditional_inputs=[one_hot_Ys])
+
+        num_predictions = kwargs.get('num_predictions', 100)
+        predictions = []
+        if self.conditional:
+            for i in range(num_predictions):
+                # generate data with conditional inputs
+                generated_points = self._model.predict_gan_generator(
+                    conditional_inputs=[Xs])
+                predictions.append(generated_points)
+        else:
+            for i in range(num_predictions):
+                generated_points = self._model.predict_gan_generator()
+                predictions.append(generated_points)
         # the above code generates points, but we need uncertainties as well
-        predictions, uncertainties = None, None
-        return predictions, uncertainties
+        preds = np.average(predictions, axis=0)
+        uncertainties = np.std(predictions, axis=0)
+        return preds, uncertainties
 
-    def _save(filename: str, **kwargs):
-        """Method defined by child to save the predictor.
+    def save(self, filename: str, **kwargs):
+        """
+        Method defined by child to save the predictor.
 
-        Method must save into memory the object at self.model
+        Method must save into memory the object at self._model
+        For other functionalities to add, see
+        https://www.tensorflow.org/guide/keras/save_and_serialize
 
-        Args:
+        Arguments:
             filename (str):
                 name of file to save model to
         """
-        # save model aka generator and discriminator separately
-        # assert filename.endswith('.h5') or other extension
-        # self.generator.save(filename)
+        # save model
+        # filename could be a path or end with .h5
+        self._model.model.save(filename)
         return None
 
-    def _load(self, filename: str, **kwargs):
-        """Method defined by child to load a predictor into memory.
+    @classmethod
+    def load(cls, filename: str, **kwargs):
+        """
+        Method defined by child to load a predictor into memory.
 
-        Loads the object to be assigned to self.model.
+        Loads the object to be assigned to self._model.
+        For other functionalities to add, see
+        https://www.tensorflow.org/guide/keras/save_and_serialize
 
-        Args:
+        Arguments:
             filename (str):
                 path of file to load
         """
         # call Keras.load function
-        # two filenames, one for gen and one for discrim?
-        # model = tf.keras.model.load_model(filename, compile=False)
-        model = None
-        return model
-
-
-class cgan(gan):
-    '''
-    This class is a subclass of the gans class and instead implements
-    a cgan. A Conditional GAN (cGAN) has additional inputs to the
-    generator and discriminator, and learns a distribution that is
-    conditional on the values of those inputs. They are referred
-    to as "conditional inputs".
-    '''
-
-    def get_conditional_input_shapes(self, **kwargs) -> Array:
-        '''
-        Returns the shape of the conditional input
-        in which the CGAN learns a distribution
-        '''
-        # adapted from deepchem tutorial 14:
-        return [(self.n_classes,)]
-
-    def create_generator(self, **kwargs) -> Object:
-        '''
-        Creates the generator (as a keras model)
-        Saves self.generator as this model
-        '''
-        # adapted from deepchem tutorial 14:
-        # do something like:
-        # hyperparameters = **kwargs
-        # output_layer_dimension = self.xshape[0]
-        # noise_in = Input(shape=get_noise_input_shape())
-        # conditional_in = Input(shape=(self.n_classes,))
-        # gen_input = Concatenate()([noise_in, conditional_in])
-        # gen_dense_lay_1 = Dense(layer_one_dimension,
-        #                             activation=activation)(gen_input)
-        # gen_outputs = Dense(output_layer_dimension,
-        #                             activation=acitvation)(gen_dense_lay_1)
-        # self.generator = tf.keras.Model(
-        #             inputs=[noise_in, conditional_in], outputs=[gen_outputs])
-        return self.generator
-
-    def create_discriminator(self, **kwargs) -> Object:
-        '''
-        Creates the discriminator (as a keras model)
-        Saves self.discriminator as this model
-        '''
-        # adapted from deepchem tutorial 14:
-        # do something like:
-        # data_in = Input(shape=(output_layer_dimension,))
-        # conditional_in = Input(shape=(self.n_classes,))
-        # discrim_in = Concatenate()([data_in, conditional_in])
-        # discrim_lay_1 = Dense(layer_one_dimension,
-        #                 activation=activation)(discrim_in)
-        # discrim_prob = Dense(1, activation=tf.sigmoid)(discrim_lay_1)
-        # self.discriminator = tf.keras.Model(
-        #            inputs=[data_in, conditional_in], outputs=[discrim_prob])
-        return self.discriminator
+        if filename.endswith('.h5'):
+            model = tf.keras.models.load_model(filename, compile=False)
+        else:
+            path_to_model = filename
+            model = tf.keras.models.load_model(path_to_model)
+        # get x and y shape
+        input_shapes = model.input_shape
+        xshape = input_shapes[2]
+        yshape = input_shapes[1]
+        noise_shape = input_shapes[0]
+        # instantiate
+        instance = cls.__new__(cls)
+        instance._xshape = xshape
+        instance._yshape = yshape
+        instance._model = model
+        instance._model.noise_shape = noise_shape
+        return instance
