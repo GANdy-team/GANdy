@@ -161,7 +161,7 @@ class TestUncertaintyModel(unittest.TestCase):
         )
         subject._get_metric = mocked__get_metric
         # run the train and check proper calls
-        with unittest.mock.patch('time.clock', return_value='thetime'
+        with unittest.mock.patch('time.time', return_value='thetime'
                                  ) as mocked_time:
             # first specify a session name
             subject.train(Xs_in, Ys_in,
