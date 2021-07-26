@@ -208,7 +208,7 @@ class UncertaintyModel:
         if session is not None:
             sname = session
         else:
-            sname = 'Starttime: ' + str(time.clock())
+            sname = 'Starttime: ' + str(time.time())
         metric = self._get_metric(metric)
 
         Xs_, Ys_ = self.check(Xs, Ys)
