@@ -165,7 +165,7 @@ class GAN(gandy.models.models.UncertaintyModel):
         # train GAN on data
         # self.model = deepchem GAN instance
         # generator + discriminator losses
-        losses = self._model.fit_gan(self.iterbatches(Xs, Ys, batches))
+        losses = self._model.fit_gan(self.iterbatches(Xs, Ys, batches), **kwargs)
         # compute metric here
         if metric is not None:
             losses[0] = metric(losses[0])  # gen
